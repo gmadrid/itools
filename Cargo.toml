@@ -1,0 +1,8 @@
+[package]
+name = "itools"
+version = "0.1.0"
+authors = ["George Madrid <gmadrid@gmail.com>"]
+
+[dependencies]
+cv = { git = "https://github.com/nebgnahz/cv-rs.git" }:x
+
