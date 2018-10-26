@@ -1,3 +1,11 @@
+extern crate itools;
+
+use itools::Result;
+
+fn run() -> Result<()> {
+   Ok(())
+}
+
 fn main() {
-    println!("Hello, world!");
+   run().unwrap();
 }
