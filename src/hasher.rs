@@ -29,18 +29,22 @@ impl HashMaster {
         println!("Computing hash for {} images.", image_count);
         let mut count = 0usize;
         for file in &self.files {
-            let sampled = self.decode(file)?;
-            let hash = self.compute_hash(sampled)?;
+            if let Ok(sampled) = self.decode(file) {
+                let hash = self.compute_hash(sampled)?;
 
-            if map.contains_key(&hash) {
-                println!("MATCH: {}", map.get(&hash).unwrap().to_str().unwrap());
-                println!("       {}", file.to_str().unwrap());
-            }
-            map.insert(hash, file);
+                if map.contains_key(&hash) {
+                    println!(
+                        "MATCH:\n  open {} {}",
+                        map.get(&hash).unwrap().to_str().unwrap(),
+                        file.to_str().unwrap()
+                    );
+                }
+                map.insert(hash, file);
 
-            count += 1;
-            if count % 10 == 0 || count == image_count {
-                println!("Computed {}/{} hashes.", count, image_count);
+                count += 1;
+                if count % 10 == 0 || count == image_count {
+                    println!("Computed {}/{} hashes.", count, image_count);
+                }
             }
         }
         Ok(())
@@ -48,7 +52,6 @@ impl HashMaster {
 
     fn compute_hash(&self, sampled: image::DynamicImage) -> Result<u64> {
         // Computing average hash
-
         let mut total = 0u16;
         for pixel in sampled.pixels() {
             let val: u8 = pixel.2.to_luma().data[0];
