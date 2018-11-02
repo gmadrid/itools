@@ -2,15 +2,28 @@ extern crate itools;
 
 use std::error::Error;
 
-use itools::{expand_file_list, Config, HashMaster, ItoolsError, Result};
+use itools::{expand_file_list, Config, HashMaster, ItoolsError, Progrs, Result};
+
+// - Different hashers
+//   - Mean
+//   - Diff
+//   - Perceptual
+//   - MD5
+// - Opener
+// - Persistence
+//   - save
+//   - load
+// - Progress
+//   - quiet mode
 
 fn run() -> Result<()> {
     let config = Config::new()?;
     let (files, _missing) = expand_file_list(config.files)?;
 
     // TODO: report the missing files.
-
-    HashMaster::new(files).run()?;
+    let p = Progrs::new(files.len() as u64);
+    // TODO: move this into run, maybe?
+    HashMaster::new(files).run(&p)?;
 
     Ok(())
 }

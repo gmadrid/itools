@@ -3,6 +3,7 @@ use std::path::PathBuf;
 
 use image;
 use img_hash::{HashType, ImageHash};
+use progress::Progrs;
 //use subprocess::{Popen, PopenConfig};
 
 use Result;
@@ -23,31 +24,20 @@ impl HashMaster {
         HashMaster { files }
     }
 
-    pub fn run(self) -> Result<()> {
+    pub fn run(self, p: &Progrs) -> Result<()> {
         let image_count = self.files.len();
         let mut map: HashMap<ImageHash, Vec<PathBuf>> = HashMap::with_capacity(image_count);
 
         self.files
             .into_iter()
-            .enumerate()
-            .flat_map(|(num, file)| {
-                if (num + 1) % 10 == 0 {
-                    println!("Hashing: {}/{}", num + 1, image_count);
-                }
+            .flat_map(|file| {
                 image::open(&file).map(|im| (file, im))
             }).map(|(file, im)| (file, im.grayscale().thumbnail_exact(8, 8)))
             .map(|(file, scaled)| (file, ImageHash::hash(&scaled, 8, HashType::Mean)))
             .for_each(|(file, hsh)| {
                 let v = map.entry(hsh).or_insert_with(|| Vec::default());
                 v.push(file);
-                if v.len() > 1 {
-                    // TODO: Rewrite this with join().
-                    print!("  open ");
-                    for s in v {
-                        print!(" {:?} ", s);
-                    }
-                    print!("\n");
-                }
+                p.inc();
             });
         Ok(())
     }
