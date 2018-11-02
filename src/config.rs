@@ -6,10 +6,12 @@ use clap::{App, Arg};
 use Result;
 
 const FILES_ARG_NAME: &str = "files";
+const NO_PROGRESS: &str = "no_progress";
 
 #[derive(Default, Debug)]
 pub struct Config {
     pub files: Vec<OsString>,
+    pub show_progress: bool,
 }
 
 impl Config {
@@ -26,6 +28,7 @@ impl Config {
             .version("0.1.0")
             .author("George Madrid <gmadrid@gmail.com>")
             .about("Collection of image processing tools")
+            .arg(Arg::with_name(NO_PROGRESS).long(NO_PROGRESS))
             .arg(
                 Arg::with_name(FILES_ARG_NAME)
                     .multiple(true)
@@ -40,8 +43,11 @@ impl Config {
             .map(OsStr::to_os_string)
             .collect();
 
+        let show_progress = !matches.is_present(NO_PROGRESS);
+
         Ok(Config {
             files,
+            show_progress,
             ..Config::default()
         })
     }

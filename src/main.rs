@@ -29,7 +29,12 @@ fn run() -> Result<()> {
     let (files, _missing) = expand_file_list(config.files)?;
 
     // TODO: report the missing files.
-    let p = new_counter(files.len() as u64);
+    let p = if config.show_progress {
+        new_counter(files.len() as u64)
+    } else {
+        None
+    };
+
     // TODO: move this into run, maybe?
     HashMaster::new(files).run(&p)?;
 
