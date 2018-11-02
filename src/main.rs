@@ -9,11 +9,19 @@ use itools::{expand_file_list, Config, HashMaster, ItoolsError, Progrs, Result};
 //   - Diff
 //   - Perceptual
 //   - MD5
-// - Opener
+// - Outputter
+//   - to stderr
+//   - with open text
+//   - with opener
+//   - none
+//   - json
+//   - complete or just dups
 // - Persistence
 //   - save
 //   - load
 // - Progress
+//   + basic
+//   - none
 //   - quiet mode
 
 fn run() -> Result<()> {
