@@ -2,7 +2,7 @@ extern crate itools;
 
 use std::error::Error;
 
-use itools::{expand_file_list, Config, HashMaster, ItoolsError, Progrs, Result};
+use itools::{expand_file_list, new_counter, Config, HashMaster, ItoolsError, Result};
 
 // - Different hashers
 //   - Mean
@@ -29,7 +29,7 @@ fn run() -> Result<()> {
     let (files, _missing) = expand_file_list(config.files)?;
 
     // TODO: report the missing files.
-    let p = Progrs::new(files.len() as u64);
+    let p = new_counter(files.len() as u64);
     // TODO: move this into run, maybe?
     HashMaster::new(files).run(&p)?;
 

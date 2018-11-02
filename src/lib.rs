@@ -16,6 +16,6 @@ mod walker;
 
 pub use config::Config;
 pub use hasher::HashMaster;
-pub use progress::Progrs;
+pub use progress::new_counter;
 pub use result::{ItoolsError, Result};
 pub use walker::expand_file_list;
