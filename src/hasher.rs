@@ -1,7 +1,8 @@
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
-use image::{self, GenericImageView, Pixel};
+use image;
+use img_hash::{HashType, ImageHash};
 //use subprocess::{Popen, PopenConfig};
 
 use Result;
@@ -24,66 +25,30 @@ impl HashMaster {
 
     pub fn run(self) -> Result<()> {
         let image_count = self.files.len();
-        let mut map: HashMap<u64, &Path> = HashMap::with_capacity(image_count);
+        let mut map: HashMap<ImageHash, Vec<PathBuf>> = HashMap::with_capacity(image_count);
 
-        println!("Computing hash for {} images.", image_count);
-        let mut count = 0usize;
-        for file in &self.files {
-            if let Ok(sampled) = self.decode(file) {
-                let hash = self.compute_hash(sampled)?;
-
-                if map.contains_key(&hash) {
-                    println!(
-                        "MATCH:\n  open {} {}",
-                        map.get(&hash).unwrap().to_str().unwrap(),
-                        file.to_str().unwrap()
-                    );
+        self.files
+            .into_iter()
+            .enumerate()
+            .flat_map(|(num, file)| {
+                if (num + 1) % 10 == 0 {
+                    println!("Hashing: {}/{}", num + 1, image_count);
                 }
-                map.insert(hash, file);
-
-                count += 1;
-                if count % 10 == 0 || count == image_count {
-                    println!("Computed {}/{} hashes.", count, image_count);
+                image::open(&file).map(|im| (file, im))
+            }).map(|(file, im)| (file, im.grayscale().thumbnail_exact(8, 8)))
+            .map(|(file, scaled)| (file, ImageHash::hash(&scaled, 8, HashType::Mean)))
+            .for_each(|(file, hsh)| {
+                let v = map.entry(hsh).or_insert_with(|| Vec::default());
+                v.push(file);
+                if v.len() > 1 {
+                    // TODO: Rewrite this with join().
+                    print!("  open ");
+                    for s in v {
+                        print!(" {:?} ", s);
+                    }
+                    print!("\n");
                 }
-            }
-        }
+            });
         Ok(())
     }
-
-    fn compute_hash(&self, sampled: image::DynamicImage) -> Result<u64> {
-        // Computing average hash
-        let mut total = 0u16;
-        for pixel in sampled.pixels() {
-            let val: u8 = pixel.2.to_luma().data[0];
-            total += val as u16;
-        }
-        let avg = total / 64;
-
-        let mut hash = 0u64;
-        for pixel in sampled.pixels() {
-            let val = pixel.2.to_luma().data[0];
-            hash <<= 1;
-            if val as u16 > avg {
-                hash |= 1;
-            }
-        }
-
-        Ok(hash)
-    }
-
-    fn decode(&self, path: &PathBuf) -> Result<(image::DynamicImage)> {
-        let im = image::open(path)?;
-        let sampled = im.grayscale().thumbnail_exact(8, 8);
-
-        Ok(sampled)
-    }
 }
-
-// ahash - compute average grayscale, then set pixels to 0 or 1 based
-// on lower/higher than avearage
-
-// dhash - compute 0 or 1 based on whether pixel is brighter or darker
-// than pixel to right
-
-// phash - 32x32, DCT, then take top-left 8x8 pixels and compare each
-// pixel to median value.

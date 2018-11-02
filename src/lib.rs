@@ -1,5 +1,6 @@
 extern crate clap;
 extern crate image;
+extern crate img_hash;
 #[macro_use]
 extern crate lazy_static;
 extern crate subprocess;

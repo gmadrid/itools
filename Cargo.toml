@@ -5,7 +5,7 @@ authors = ["George Madrid <gmadrid@gmail.com>"]
 
 [dependencies]
 clap = "2.32.0"
-image = "0.20.0"
+image = "0.19.0"
 lazy_static = "1.1.0"
 subprocess = "0.1.17"
 walkdir = "2.2.5"
