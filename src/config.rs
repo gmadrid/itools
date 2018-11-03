@@ -7,6 +7,7 @@ use Result;
 
 const FILES_ARG_NAME: &str = "files";
 const NO_PROGRESS: &str = "no_progress";
+const QUIET: &str = "quiet";
 
 #[derive(Default, Debug)]
 pub struct Config {
@@ -29,6 +30,7 @@ impl Config {
             .author("George Madrid <gmadrid@gmail.com>")
             .about("Collection of image processing tools")
             .arg(Arg::with_name(NO_PROGRESS).long(NO_PROGRESS))
+            .arg(Arg::with_name(QUIET).long(QUIET))
             .arg(
                 Arg::with_name(FILES_ARG_NAME)
                     .multiple(true)
@@ -43,7 +45,8 @@ impl Config {
             .map(OsStr::to_os_string)
             .collect();
 
-        let show_progress = !matches.is_present(NO_PROGRESS);
+        let quiet = matches.is_present(QUIET);
+        let show_progress = !matches.is_present(NO_PROGRESS) && !quiet;
 
         Ok(Config {
             files,
