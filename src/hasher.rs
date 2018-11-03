@@ -1,13 +1,11 @@
-use std::collections::HashMap;
-use std::path::PathBuf;
-
 use image;
 use img_hash::{HashType, ImageHash};
 use indicatif::ProgressBar;
-//use subprocess::{Popen, PopenConfig};
+// use subprocess::{Popen, PopenConfig};
 
 use progress::Progress;
-use Result;
+use std::collections::HashMap;
+use std::path::PathBuf;
 
 pub struct HashMaster {
     files: Vec<PathBuf>,
@@ -22,10 +20,10 @@ pub struct HashMaster {
 
 impl HashMaster {
     pub fn new(files: Vec<PathBuf>) -> HashMaster {
-        HashMaster { files }
+        HashMaster { files: files }
     }
 
-    pub fn run(self, p: &Option<ProgressBar>) -> Result<()> {
+    pub fn run(self, progress: Option<ProgressBar>) {
         let image_count = self.files.len();
         let mut map: HashMap<ImageHash, Vec<PathBuf>> = HashMap::with_capacity(image_count);
 
@@ -37,8 +35,7 @@ impl HashMaster {
             .for_each(|(file, hsh)| {
                 let v = map.entry(hsh).or_insert_with(|| Vec::default());
                 v.push(file);
-                p.inc();
+                progress.inc();
             });
-        Ok(())
     }
 }
