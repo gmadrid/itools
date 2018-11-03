@@ -3,13 +3,13 @@ use indicatif::{ProgressBar, ProgressDrawTarget};
 
 type Progrs = Option<ProgressBar>;
 
-pub fn new_counter(num_items: u64) -> Progrs {
+pub fn new_counter(num_items: u64) -> ProgressBar {
     let bar = ProgressBar::new(num_items);
     bar.set_draw_target(ProgressDrawTarget::to_term(
         Term::buffered_stderr(),
         Some(2),
     ));
-    Some(bar)
+    bar
 }
 
 pub trait Progress {
