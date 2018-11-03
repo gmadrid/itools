@@ -21,10 +21,6 @@ use itools::{
 // - Persistence
 //   - save
 //   - load
-// + Progress
-//   + basic
-//   + none
-//   + quiet mode
 
 fn run() -> Result<()> {
     let config = Config::new()?;
