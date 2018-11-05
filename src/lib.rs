@@ -11,6 +11,7 @@ extern crate walkdir;
 mod config;
 mod fileinfo;
 mod hasher;
+mod output;
 mod progress;
 mod result;
 mod utils;

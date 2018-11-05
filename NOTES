@@ -1,0 +1,34 @@
+Goal: To find dups and near dups in a large corpus of image files.
+
+1) Scan images and compute hashes for them. (sha2(256), ahash, dhash, phash)
+
+   - Don't recompute existing hashes.
+
+   - If a dup image (by sha2) is found, don't recompute hashes.
+
+   - Ideally, we will not re-read image files for each hash.
+
+   - Also, ideally, we will read the images on a single thread, but do
+     hash computation in parallel.
+
+2) Save scanned file data so that it doesn't need to be recomputed.
+
+   - periodically dump save to file so that partial scans aren't wasted.
+
+3) Specify how to find dups
+
+   - exact matches
+
+   - bit difference by hash (or all)
+
+4) Output by
+
+   - text
+
+   - json
+
+   - "open" in Preview
+
+
+
+    

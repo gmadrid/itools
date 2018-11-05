@@ -5,14 +5,59 @@ use clap::{App, Arg};
 
 use Result;
 
+const APP_NAME: &str = "itools";
+
+const ABOUT: &str = "Finds dup and near-dup image files.";
+const AUTHOR: &str = "George Madrid <gmadrid@gmail.com>";
+const VERSION: &str = "0.1.0";
+
 const FILES_ARG_NAME: &str = "files";
-const NO_PROGRESS: &str = "no_progress";
-const QUIET: &str = "quiet";
+const NO_AHASH_ARG_NAME: &str = "no_ahash";
+const NO_DHASH_ARG_NAME: &str = "no_dhash";
+const NO_PHASH_ARG_NAME: &str = "no_phash";
+const NO_PROGRESS_ARG_NAME: &str = "no_progress";
+const NO_SHA2_ARG_NAME: &str = "no_sha2";
+const QUIET_ARG_NAME: &str = "quiet";
 
 #[derive(Default, Debug)]
 pub struct Config {
     pub files: Vec<OsString>,
     pub show_progress: bool,
+}
+
+fn build_clap_spec<'a, 'b>() -> clap::App<'a, 'b> {
+    let no_progress_arg = Arg::with_name(NO_PROGRESS_ARG_NAME).long(NO_PROGRESS_ARG_NAME);
+    let quiet_arg = Arg::with_name(QUIET_ARG_NAME)
+        .long(QUIET_ARG_NAME)
+        .short("q");
+    let files_arg = Arg::with_name(FILES_ARG_NAME)
+        .multiple(true)
+        .takes_value(true)
+        .required(true);
+
+    App::new(APP_NAME)
+        .about(ABOUT)
+        .author(AUTHOR)
+        .version(VERSION)
+        .arg(no_progress_arg)
+        .arg(quiet_arg)
+        .arg(files_arg)
+}
+
+fn files_values<'a>(matches: &clap::ArgMatches<'a>) -> Vec<OsString> {
+    matches
+        .values_of_os(FILES_ARG_NAME)
+        .unwrap() // Should be safe, since clap ensures at least one.
+        .map(OsStr::to_os_string)
+        .collect()
+}
+
+fn quiet_value<'a>(matches: &clap::ArgMatches<'a>) -> bool {
+    matches.is_present(QUIET_ARG_NAME)
+}
+
+fn show_progress_value<'a>(matches: &clap::ArgMatches<'a>) -> bool {
+    !matches.is_present(NO_PROGRESS_ARG_NAME) && !quiet_value(matches)
 }
 
 impl Config {
@@ -25,33 +70,11 @@ impl Config {
         I: IntoIterator<Item = T>,
         T: Into<OsString> + Clone,
     {
-        let matches = App::new("itools")
-            .version("0.1.0")
-            .author("George Madrid <gmadrid@gmail.com>")
-            .about("Collection of image processing tools")
-            .arg(Arg::with_name(NO_PROGRESS).long(NO_PROGRESS))
-            .arg(Arg::with_name(QUIET).long(QUIET))
-            .arg(
-                Arg::with_name(FILES_ARG_NAME)
-                    .multiple(true)
-                    .takes_value(true)
-                    .required(true),
-            ).get_matches_from_safe(itr)?;
-
-        // Should be safe since Clap ensures there is at least one arg.
-        let files = matches
-            .values_of_os(FILES_ARG_NAME)
-            .unwrap()
-            .map(OsStr::to_os_string)
-            .collect();
-
-        let quiet = matches.is_present(QUIET);
-        let show_progress = !matches.is_present(NO_PROGRESS) && !quiet;
+        let matches = build_clap_spec().get_matches_from_safe(itr)?;
 
         Ok(Config {
-            files,
-            show_progress,
-            ..Config::default()
+            files: files_values(&matches),
+            show_progress: show_progress_value(&matches),
         })
     }
 }
