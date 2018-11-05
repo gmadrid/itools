@@ -1,9 +1,44 @@
 use std::env;
 use std::ffi::{OsStr, OsString};
 
-use clap::{App, Arg};
+use clap::{self, App, Arg};
 
 use Result;
+
+#[derive(Default, Debug)]
+pub struct Config {
+    pub files: Vec<OsString>,
+    pub show_progress: bool,
+
+    pub compute_ahash: bool,
+    pub compute_dhash: bool,
+    pub compute_phash: bool,
+    pub compute_sha2: bool,
+}
+
+impl Config {
+    pub fn new() -> Result<Config> {
+        Config::new_from(env::args_os())
+    }
+
+    pub fn new_from<I, T>(itr: I) -> Result<Config>
+    where
+        I: IntoIterator<Item = T>,
+        T: Into<OsString> + Clone,
+    {
+        let matches = build_clap_spec().get_matches_from_safe(itr)?;
+
+        Ok(Config {
+            files: files_values(&matches),
+            show_progress: show_progress_value(&matches),
+
+            compute_ahash: compute_ahash_value(&matches),
+            compute_dhash: compute_dhash_value(&matches),
+            compute_phash: compute_phash_value(&matches),
+            compute_sha2: compute_sha2_value(&matches),
+        })
+    }
+}
 
 const APP_NAME: &str = "itools";
 
@@ -18,12 +53,6 @@ const NO_PHASH_ARG_NAME: &str = "no_phash";
 const NO_PROGRESS_ARG_NAME: &str = "no_progress";
 const NO_SHA2_ARG_NAME: &str = "no_sha2";
 const QUIET_ARG_NAME: &str = "quiet";
-
-#[derive(Default, Debug)]
-pub struct Config {
-    pub files: Vec<OsString>,
-    pub show_progress: bool,
-}
 
 fn build_clap_spec<'a, 'b>() -> clap::App<'a, 'b> {
     let no_progress_arg = Arg::with_name(NO_PROGRESS_ARG_NAME).long(NO_PROGRESS_ARG_NAME);
@@ -52,31 +81,28 @@ fn files_values<'a>(matches: &clap::ArgMatches<'a>) -> Vec<OsString> {
         .collect()
 }
 
+fn compute_dhash_value<'a>(matches: &clap::ArgMatches<'a>) -> bool {
+    !matches.is_present(NO_DHASH_ARG_NAME)
+}
+
+fn compute_phash_value<'a>(matches: &clap::ArgMatches<'a>) -> bool {
+    !matches.is_present(NO_PHASH_ARG_NAME)
+}
+
+fn compute_ahash_value<'a>(matches: &clap::ArgMatches<'a>) -> bool {
+    !matches.is_present(NO_AHASH_ARG_NAME)
+}
+
+fn compute_sha2_value<'a>(matches: &clap::ArgMatches<'a>) -> bool {
+    !matches.is_present(NO_SHA2_ARG_NAME)
+}
+
 fn quiet_value<'a>(matches: &clap::ArgMatches<'a>) -> bool {
     matches.is_present(QUIET_ARG_NAME)
 }
 
 fn show_progress_value<'a>(matches: &clap::ArgMatches<'a>) -> bool {
     !matches.is_present(NO_PROGRESS_ARG_NAME) && !quiet_value(matches)
-}
-
-impl Config {
-    pub fn new() -> Result<Config> {
-        Config::new_from(env::args_os())
-    }
-
-    pub fn new_from<I, T>(itr: I) -> Result<Config>
-    where
-        I: IntoIterator<Item = T>,
-        T: Into<OsString> + Clone,
-    {
-        let matches = build_clap_spec().get_matches_from_safe(itr)?;
-
-        Ok(Config {
-            files: files_values(&matches),
-            show_progress: show_progress_value(&matches),
-        })
-    }
 }
 
 #[cfg(test)]
