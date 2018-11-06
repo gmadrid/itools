@@ -1,12 +1,10 @@
 use std::path::PathBuf;
 
-use img_hash::ImageHash;
-
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Serialize, Deserialize)]
 pub struct FileInfo {
     pub filename: PathBuf,
-    pub a_hash: Option<ImageHash>,
-    pub d_hash: Option<ImageHash>,
-    pub p_hash: Option<ImageHash>,
-    pub sha2_hash: Option<Vec<u8>>,
+    pub a_hash: Option<String>,
+    pub d_hash: Option<String>,
+    pub p_hash: Option<String>,
+    pub sha2_hash: Option<String>,
 }

@@ -5,6 +5,10 @@ extern crate img_hash;
 extern crate indicatif;
 #[macro_use]
 extern crate lazy_static;
+extern crate rustc_serialize as serialize;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
 extern crate sha2;
 extern crate subprocess;
 extern crate walkdir;

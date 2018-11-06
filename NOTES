@@ -30,10 +30,18 @@ Goal: To find dups and near dups in a large corpus of image files.
    - "open" in Preview
 
 
-
+// Basic structure of the Hasher.
+// Input is a list of files.
+// Output is a channel of fully-populated FileInfo objects.
   FileWalker -> FileReader -> Sha2Hasher  ->         ---> DataAggregator
                               ImageReader -> AHasher -^
 			                  +> DHasher -^
 					  +> PHasher -^
 
 
+// PersistedCache
+// 1) take channel of FileInfo, and put them into a HashMap (by filename?)
+// 2) periodically, save this HashMap into a persisted file (json/serde?)
+// 3) When creating the PersistedCache, specify a filename for loading.
+// 4) Also, specify the name of the output file on creation.
+// 5) If inputname == outputname, nothing bad should happen.

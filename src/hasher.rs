@@ -5,6 +5,7 @@ use std::sync::{Arc, RwLock};
 use std::thread::{spawn, JoinHandle};
 
 use img_hash::{HashType, ImageHash};
+use serialize::base64::{ToBase64, STANDARD};  // , FromBase64, STANDARD};
 use sha2::{Digest, Sha256};
 
 use fileinfo::FileInfo;
@@ -111,7 +112,7 @@ fn make_sha2_hasher(
             hasher.input(buf.as_ref());
             {
                 let mut w = fi.write().unwrap();
-                w.sha2_hash = Some(hasher.result_reset().to_vec());
+                w.sha2_hash = Some(hasher.result_reset().to_vec().to_base64(STANDARD));
             }
             tx_local.send(fi).unwrap();
         }
@@ -154,7 +155,7 @@ fn make_ahasher(
             let ahash = ImageHash::hash(image.as_ref(), 8, HashType::Mean);
             {
                 let mut w = fi.write().unwrap();
-                w.a_hash = Some(ahash);
+                w.a_hash = Some(ahash.to_base64());
             }
             tx.send(fi).unwrap();
         }
@@ -172,7 +173,7 @@ fn make_dhasher(
             let ahash = ImageHash::hash(image.as_ref(), 8, HashType::Gradient);
             {
                 let mut w = fi.write().unwrap();
-                w.d_hash = Some(ahash);
+                w.d_hash = Some(ahash.to_base64());
             }
             tx.send(fi).unwrap();
         }
@@ -190,7 +191,7 @@ fn make_phasher(
             let phash = ImageHash::hash(image.as_ref(), 8, HashType::DCT);
             {
                 let mut w = fi.write().unwrap();
-                w.p_hash = Some(phash);
+                w.p_hash = Some(phash.to_base64());
             }
             tx.send(fi).unwrap();
         }
@@ -207,6 +208,7 @@ fn make_aggregator(fi_rx: Receiver<FileInfoHandle>) -> (Receiver<FileInfo>, Join
             let fi_complete;
             {
                 let fi_read = fi.read().unwrap();
+                println!("SHOOP: {:?}", fi_read);
                 fi_complete = fi_read.a_hash.is_some()
                     && fi_read.d_hash.is_some()
                     && fi_read.p_hash.is_some()
