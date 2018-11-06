@@ -31,7 +31,15 @@ fn run() -> Result<()> {
     let (files, _missing) = expand_file_list(config.files)?;
 
     // TODO: add the progress meter back in.
-    Machine::run(files).join();
+    let machine = Machine::run(files);
+
+    for fi in machine.agg_receiver() {
+        println!("{}", fi.filename.to_string_lossy());
+    }
+
+    machine.join();
+
+
 
     Ok(())
 }

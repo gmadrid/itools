@@ -18,15 +18,59 @@ pub struct Machine {
     dhash_handle: JoinHandle<()>,
     phash_handle: JoinHandle<()>,
     aggregator_handle: JoinHandle<()>,
+
+    aggregator_rx: Receiver<FileInfo>,
+}
+
+impl Machine {
+    pub fn run(files: Vec<PathBuf>) -> Machine {
+        let (sha_hasher_rx, image_creator_rx, file_reader_handle) = make_file_reader(files);
+        let (aggregator_tx, aggregator_rx, sha2_hasher_handle) = make_sha2_hasher(sha_hasher_rx);
+        let (ahash_rx, dhash_rx, phash_rx, image_creator_handle) =
+            make_image_creator(image_creator_rx);
+
+        let ahash_handle = make_ahasher(ahash_rx, aggregator_tx.clone());
+        let dhash_handle = make_dhasher(dhash_rx, aggregator_tx.clone());
+        let phash_handle = make_phasher(phash_rx, aggregator_tx);
+        let (aggregator_rx, aggregator_handle) = make_aggregator(aggregator_rx);
+
+        Machine {
+            file_reader_handle,
+            sha2_hasher_handle,
+            image_creator_handle,
+            ahash_handle,
+            dhash_handle,
+            phash_handle,
+            aggregator_handle,
+
+            aggregator_rx,
+        }
+    }
+
+    pub fn agg_receiver(&self) -> &Receiver<FileInfo> {
+        &self.aggregator_rx
+    }
+
+    pub fn join(self) {
+        self.file_reader_handle.join().unwrap();
+        self.sha2_hasher_handle.join().unwrap();
+        self.image_creator_handle.join().unwrap();
+        self.ahash_handle.join().unwrap();
+        self.dhash_handle.join().unwrap();
+        self.phash_handle.join().unwrap();
+        self.aggregator_handle.join().unwrap();
+    }
 }
 
 type FileInfoHandle = Arc<RwLock<FileInfo>>;
+type VecHandle<T> = Arc<Vec<T>>;
+type ImageHandle = Arc<image::DynamicImage>;
 
 fn make_file_reader(
     files: Vec<PathBuf>,
 ) -> (
-    Receiver<(FileInfoHandle, Arc<Vec<u8>>)>,
-    Receiver<(FileInfoHandle, Arc<Vec<u8>>)>,
+    Receiver<(FileInfoHandle, VecHandle<u8>)>,
+    Receiver<(FileInfoHandle, VecHandle<u8>)>,
     JoinHandle<()>,
 ) {
     let (tx0, rx0) = sync_channel(0);
@@ -52,7 +96,7 @@ fn make_file_reader(
 }
 
 fn make_sha2_hasher(
-    fi_receiver: Receiver<(FileInfoHandle, Arc<Vec<u8>>)>,
+    fi_receiver: Receiver<(FileInfoHandle, VecHandle<u8>)>,
 ) -> (
     SyncSender<FileInfoHandle>,
     Receiver<FileInfoHandle>,
@@ -77,11 +121,11 @@ fn make_sha2_hasher(
 }
 
 fn make_image_creator(
-    fi_receiver: Receiver<(FileInfoHandle, Arc<Vec<u8>>)>,
+    fi_receiver: Receiver<(FileInfoHandle, VecHandle<u8>)>,
 ) -> (
-    Receiver<(FileInfoHandle, Arc<image::DynamicImage>)>,
-    Receiver<(FileInfoHandle, Arc<image::DynamicImage>)>,
-    Receiver<(FileInfoHandle, Arc<image::DynamicImage>)>,
+    Receiver<(FileInfoHandle, ImageHandle)>,
+    Receiver<(FileInfoHandle, ImageHandle)>,
+    Receiver<(FileInfoHandle, ImageHandle)>,
     JoinHandle<()>,
 ) {
     let (tx0, rx0) = sync_channel(0);
@@ -102,7 +146,7 @@ fn make_image_creator(
 }
 
 fn make_ahasher(
-    rx: Receiver<(FileInfoHandle, Arc<image::DynamicImage>)>,
+    rx: Receiver<(FileInfoHandle, ImageHandle)>,
     tx: SyncSender<FileInfoHandle>,
 ) -> JoinHandle<()> {
     let handle = spawn(move || {
@@ -120,7 +164,7 @@ fn make_ahasher(
 }
 
 fn make_dhasher(
-    rx: Receiver<(FileInfoHandle, Arc<image::DynamicImage>)>,
+    rx: Receiver<(FileInfoHandle, ImageHandle)>,
     tx: SyncSender<FileInfoHandle>,
 ) -> JoinHandle<()> {
     let handle = spawn(move || {
@@ -138,7 +182,7 @@ fn make_dhasher(
 }
 
 fn make_phasher(
-    rx: Receiver<(FileInfoHandle, Arc<image::DynamicImage>)>,
+    rx: Receiver<(FileInfoHandle, ImageHandle)>,
     tx: SyncSender<FileInfoHandle>,
 ) -> JoinHandle<()> {
     let handle = spawn(move || {
@@ -155,51 +199,27 @@ fn make_phasher(
     handle
 }
 
-fn make_aggregator(rx: Receiver<FileInfoHandle>) -> JoinHandle<()> {
+fn make_aggregator(fi_rx: Receiver<FileInfoHandle>) -> (Receiver<FileInfo>, JoinHandle<()>) {
+    let (tx, rx) = sync_channel(0);
+
     let handle = spawn(move || {
-        for fi in rx {
-            let fi_read = fi.read().unwrap();
-            if fi_read.a_hash.is_some() &&
-                fi_read.d_hash.is_some() &&
-                fi_read.p_hash.is_some() &&
-                fi_read.sha2_hash.is_some() {
-                println!("AGG: {}", fi.read().unwrap().filename.to_string_lossy());
+        for fi in fi_rx {
+            let fi_complete;
+            {
+                let fi_read = fi.read().unwrap();
+                fi_complete = fi_read.a_hash.is_some()
+                    && fi_read.d_hash.is_some()
+                    && fi_read.p_hash.is_some()
+                    && fi_read.sha2_hash.is_some()
+            }
+            if fi_complete {
+                // This mess is how you get an owned object out of an Arc<RwLock>.
+                // It will only work if Arc::strong_count == 1.
+                tx.send(Arc::try_unwrap(fi).unwrap().into_inner().unwrap())
+                    .unwrap();
             }
         }
     });
-    handle
-}
 
-impl Machine {
-    pub fn run(files: Vec<PathBuf>) -> Machine {
-        let (sha_hasher_rx, image_creator_rx, file_reader_handle) = make_file_reader(files);
-        let (aggregator_tx, aggregator_rx, sha2_hasher_handle) = make_sha2_hasher(sha_hasher_rx);
-        let (ahash_rx, dhash_rx, phash_rx, image_creator_handle) =
-            make_image_creator(image_creator_rx);
-
-        let ahash_handle = make_ahasher(ahash_rx, aggregator_tx.clone());
-        let dhash_handle = make_dhasher(dhash_rx, aggregator_tx.clone());
-        let phash_handle = make_phasher(phash_rx, aggregator_tx);
-        let aggregator_handle = make_aggregator(aggregator_rx);
-
-        Machine {
-            file_reader_handle,
-            sha2_hasher_handle,
-            image_creator_handle,
-            ahash_handle,
-            dhash_handle,
-            phash_handle,
-            aggregator_handle,
-        }
-    }
-
-    pub fn join(self) {
-        self.file_reader_handle.join().unwrap();
-        self.sha2_hasher_handle.join().unwrap();
-        self.image_creator_handle.join().unwrap();
-        self.ahash_handle.join().unwrap();
-        self.dhash_handle.join().unwrap();
-        self.phash_handle.join().unwrap();
-        self.aggregator_handle.join().unwrap();
-    }
+    (rx, handle)
 }
