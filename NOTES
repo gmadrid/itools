@@ -31,4 +31,8 @@ Goal: To find dups and near dups in a large corpus of image files.
 
 
 
-    
+  FileWalker -> FileReader -> Sha2Hasher  ->         ---> DataAggregator
+                              ImageReader -> AHasher -^
+			                  +> DHasher -^
+					  +> PHasher -^
+					  

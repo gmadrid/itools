@@ -5,12 +5,14 @@ extern crate img_hash;
 extern crate indicatif;
 #[macro_use]
 extern crate lazy_static;
+extern crate sha2;
 extern crate subprocess;
 extern crate walkdir;
 
 mod config;
 mod fileinfo;
 mod hasher;
+mod machine;
 mod output;
 mod progress;
 mod result;
@@ -18,7 +20,9 @@ mod utils;
 mod walker;
 
 pub use config::Config;
+pub use fileinfo::FileInfo;
 pub use hasher::HashMaster;
+pub use machine::Machine;
 pub use progress::new_counter;
 pub use result::{ItoolsError, Result};
 pub use utils::bool_to_option;
