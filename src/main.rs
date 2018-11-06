@@ -4,7 +4,7 @@ use std::error::Error;
 
 use itools::{
     expand_file_list, Config, ItoolsError,
-    Machine,
+    Hasher,
     Result,
 };
 
@@ -31,15 +31,13 @@ fn run() -> Result<()> {
     let (files, _missing) = expand_file_list(config.files)?;
 
     // TODO: add the progress meter back in.
-    let machine = Machine::run(files);
+    let hasher = Hasher::run(files);
 
-    for fi in machine.agg_receiver() {
+    for fi in hasher.agg_receiver() {
         println!("{}", fi.filename.to_string_lossy());
     }
 
-    machine.join();
-
-
+    hasher.join();
 
     Ok(())
 }

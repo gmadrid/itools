@@ -10,7 +10,7 @@ use sha2::{Digest, Sha256};
 use fileinfo::FileInfo;
 
 #[derive(Debug)]
-pub struct Machine {
+pub struct Hasher {
     file_reader_handle: JoinHandle<()>,
     sha2_hasher_handle: JoinHandle<()>,
     image_creator_handle: JoinHandle<()>,
@@ -22,8 +22,8 @@ pub struct Machine {
     aggregator_rx: Receiver<FileInfo>,
 }
 
-impl Machine {
-    pub fn run(files: Vec<PathBuf>) -> Machine {
+impl Hasher {
+    pub fn run(files: Vec<PathBuf>) -> Hasher {
         let (sha_hasher_rx, image_creator_rx, file_reader_handle) = make_file_reader(files);
         let (aggregator_tx, aggregator_rx, sha2_hasher_handle) = make_sha2_hasher(sha_hasher_rx);
         let (ahash_rx, dhash_rx, phash_rx, image_creator_handle) =
@@ -34,7 +34,7 @@ impl Machine {
         let phash_handle = make_phasher(phash_rx, aggregator_tx);
         let (aggregator_rx, aggregator_handle) = make_aggregator(aggregator_rx);
 
-        Machine {
+        Hasher {
             file_reader_handle,
             sha2_hasher_handle,
             image_creator_handle,

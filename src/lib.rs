@@ -11,7 +11,7 @@ extern crate walkdir;
 
 mod config;
 mod fileinfo;
-mod machine;
+mod hasher;
 mod output;
 mod progress;
 mod result;
@@ -20,7 +20,7 @@ mod walker;
 
 pub use config::Config;
 pub use fileinfo::FileInfo;
-pub use machine::Machine;
+pub use hasher::Hasher;
 pub use progress::new_counter;
 pub use result::{ItoolsError, Result};
 pub use utils::bool_to_option;

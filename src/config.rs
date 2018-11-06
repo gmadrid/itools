@@ -76,33 +76,35 @@ fn show_progress_value<'a>(matches: &clap::ArgMatches<'a>) -> bool {
 }
 
 #[cfg(test)]
-use ItoolsError;
+mod testing {
+    use ItoolsError;
+    use Config;
 
-#[cfg(test)]
-pub const CMD_NAME: &str = "CommandNameIgnored";
+    pub const CMD_NAME: &str = "CommandNameIgnored";
 
-#[test]
-fn test_no_file_args() {
-    let c = Config::new_from(vec![CMD_NAME]);
-    assert!(!c.is_ok());
-    let err = c.unwrap_err();
-    match err {
-        ItoolsError::Clap(_) => {
-            // SUCCESS
-        }
-        other => {
-            panic!("No file args has unexpected error: {:?}", other);
+    #[test]
+    fn test_no_file_args() {
+        let c = Config::new_from(vec![CMD_NAME]);
+        assert!(!c.is_ok());
+        let err = c.unwrap_err();
+        match err {
+            ItoolsError::Clap(_) => {
+                // SUCCESS
+            }
+            other => {
+                panic!("No file args has unexpected error: {:?}", other);
+            }
         }
     }
-}
 
-#[test]
-fn test_file_args() {
-    let c_one = Config::new_from(vec![CMD_NAME, "foo"]);
-    assert!(c_one.is_ok());
-    assert_eq!(c_one.unwrap().files, vec!["foo"]);
+    #[test]
+    fn test_file_args() {
+        let c_one = Config::new_from(vec![CMD_NAME, "foo"]);
+        assert!(c_one.is_ok());
+        assert_eq!(c_one.unwrap().files, vec!["foo"]);
 
-    let c_many = Config::new_from(vec![CMD_NAME, "foo", "bar", "quux"]);
-    assert!(c_many.is_ok());
-    assert_eq!(c_many.unwrap().files, vec!["foo", "bar", "quux"])
+        let c_many = Config::new_from(vec![CMD_NAME, "foo", "bar", "quux"]);
+        assert!(c_many.is_ok());
+        assert_eq!(c_many.unwrap().files, vec!["foo", "bar", "quux"])
+    }
 }
