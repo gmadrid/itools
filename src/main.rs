@@ -2,11 +2,7 @@ extern crate itools;
 
 use std::error::Error;
 
-use itools::{
-    expand_file_list, Config, ItoolsError,
-    Hasher,
-    Result,
-};
+use itools::{expand_file_list, Config, Hasher, ItoolsError, Result};
 
 // - Different hashers
 //   - Mean
