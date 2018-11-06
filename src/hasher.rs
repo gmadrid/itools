@@ -19,12 +19,10 @@ pub struct Hasher {
     dhash_handle: JoinHandle<()>,
     phash_handle: JoinHandle<()>,
     aggregator_handle: JoinHandle<()>,
-
-    aggregator_rx: Receiver<FileInfo>,
 }
 
 impl Hasher {
-    pub fn run(files: Vec<PathBuf>) -> Hasher {
+    pub fn run(files: Vec<PathBuf>) -> (Hasher, Receiver<FileInfo>) {
         let (sha_hasher_rx, image_creator_rx, file_reader_handle) = make_file_reader(files);
         let (aggregator_tx, aggregator_rx, sha2_hasher_handle) = make_sha2_hasher(sha_hasher_rx);
         let (ahash_rx, dhash_rx, phash_rx, image_creator_handle) =
@@ -35,21 +33,18 @@ impl Hasher {
         let phash_handle = make_phasher(phash_rx, aggregator_tx);
         let (aggregator_rx, aggregator_handle) = make_aggregator(aggregator_rx);
 
-        Hasher {
-            file_reader_handle,
-            sha2_hasher_handle,
-            image_creator_handle,
-            ahash_handle,
-            dhash_handle,
-            phash_handle,
-            aggregator_handle,
-
+        (
+            Hasher {
+                file_reader_handle,
+                sha2_hasher_handle,
+                image_creator_handle,
+                ahash_handle,
+                dhash_handle,
+                phash_handle,
+                aggregator_handle,
+            },
             aggregator_rx,
-        }
-    }
-
-    pub fn agg_receiver(&self) -> &Receiver<FileInfo> {
-        &self.aggregator_rx
+        )
     }
 
     pub fn join(self) {

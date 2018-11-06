@@ -2,7 +2,7 @@ extern crate itools;
 
 use std::error::Error;
 
-use itools::{expand_file_list, Config, Hasher, ItoolsError, Result};
+use itools::{expand_file_list, Config, Hasher, ItoolsError, PersistedCache, Result};
 
 // - Different hashers
 //   - Mean
@@ -27,13 +27,13 @@ fn run() -> Result<()> {
     let (files, _missing) = expand_file_list(config.files)?;
 
     // TODO: add the progress meter back in.
-    let hasher = Hasher::run(files);
+    let (hasher, agg_rx) = Hasher::run(files);
 
-    for fi in hasher.agg_receiver() {
-        println!("{}", fi.filename.to_string_lossy());
-    }
+    let mut cache = PersistedCache::new();
+    cache.run(agg_rx);
 
     hasher.join();
+    cache.join();
 
     Ok(())
 }
