@@ -208,7 +208,6 @@ fn make_aggregator(fi_rx: Receiver<FileInfoHandle>) -> (Receiver<FileInfo>, Join
             let fi_complete;
             {
                 let fi_read = fi.read().unwrap();
-                println!("SHOOP: {:?}", fi_read);
                 fi_complete = fi_read.a_hash.is_some()
                     && fi_read.d_hash.is_some()
                     && fi_read.p_hash.is_some()
