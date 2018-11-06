@@ -1,6 +1,4 @@
-extern crate image;
 extern crate itools;
-extern crate sha2;
 
 use std::error::Error;
 
@@ -28,16 +26,12 @@ use itools::{
 
 fn run() -> Result<()> {
     let config = Config::new()?;
-    let (files, _missing) = expand_file_list(config.files)?;
-
-    Machine::run(files).join();
 
     // TODO: report the missing files.
-    // TODO: move this into run, maybe?
-    //    let num_files = files.len();
-    //    HashMaster::new(files).run(bool_to_option(config.show_progress, || {
-    //        new_counter(num_files as u64)
-    //    }));
+    let (files, _missing) = expand_file_list(config.files)?;
+
+    // TODO: add the progress meter back in.
+    Machine::run(files).join();
 
     Ok(())
 }
