@@ -35,4 +35,5 @@ Goal: To find dups and near dups in a large corpus of image files.
                               ImageReader -> AHasher -^
 			                  +> DHasher -^
 					  +> PHasher -^
-					  
+
+

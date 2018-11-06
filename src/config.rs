@@ -9,11 +9,6 @@ use Result;
 pub struct Config {
     pub files: Vec<OsString>,
     pub show_progress: bool,
-
-    pub compute_ahash: bool,
-    pub compute_dhash: bool,
-    pub compute_phash: bool,
-    pub compute_sha2: bool,
 }
 
 impl Config {
@@ -31,11 +26,6 @@ impl Config {
         Ok(Config {
             files: files_values(&matches),
             show_progress: show_progress_value(&matches),
-
-            compute_ahash: compute_ahash_value(&matches),
-            compute_dhash: compute_dhash_value(&matches),
-            compute_phash: compute_phash_value(&matches),
-            compute_sha2: compute_sha2_value(&matches),
         })
     }
 }
@@ -47,11 +37,7 @@ const AUTHOR: &str = "George Madrid <gmadrid@gmail.com>";
 const VERSION: &str = "0.1.0";
 
 const FILES_ARG_NAME: &str = "files";
-const NO_AHASH_ARG_NAME: &str = "no_ahash";
-const NO_DHASH_ARG_NAME: &str = "no_dhash";
-const NO_PHASH_ARG_NAME: &str = "no_phash";
 const NO_PROGRESS_ARG_NAME: &str = "no_progress";
-const NO_SHA2_ARG_NAME: &str = "no_sha2";
 const QUIET_ARG_NAME: &str = "quiet";
 
 fn build_clap_spec<'a, 'b>() -> clap::App<'a, 'b> {
@@ -79,22 +65,6 @@ fn files_values<'a>(matches: &clap::ArgMatches<'a>) -> Vec<OsString> {
         .unwrap() // Should be safe, since clap ensures at least one.
         .map(OsStr::to_os_string)
         .collect()
-}
-
-fn compute_dhash_value<'a>(matches: &clap::ArgMatches<'a>) -> bool {
-    !matches.is_present(NO_DHASH_ARG_NAME)
-}
-
-fn compute_phash_value<'a>(matches: &clap::ArgMatches<'a>) -> bool {
-    !matches.is_present(NO_PHASH_ARG_NAME)
-}
-
-fn compute_ahash_value<'a>(matches: &clap::ArgMatches<'a>) -> bool {
-    !matches.is_present(NO_AHASH_ARG_NAME)
-}
-
-fn compute_sha2_value<'a>(matches: &clap::ArgMatches<'a>) -> bool {
-    !matches.is_present(NO_SHA2_ARG_NAME)
 }
 
 fn quiet_value<'a>(matches: &clap::ArgMatches<'a>) -> bool {
