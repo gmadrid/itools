@@ -16,12 +16,13 @@ lazy_static! {
 }
 
 pub fn expand_file_list(files: Vec<OsString>) -> Result<(Vec<PathBuf>, Vec<PathBuf>)> {
-    let (existing, missing): (Vec<PathBuf>, Vec<PathBuf>) = files.into_iter()
+    let (existing, missing): (Vec<PathBuf>, Vec<PathBuf>) = files
+        .into_iter()
         .map(|osstr| PathBuf::from(osstr))
         .partition(|path| path.exists());
 
-    let (directories, mut files): (Vec<PathBuf>, Vec<PathBuf>) = existing.into_iter()
-        .partition(|path| path.is_dir());
+    let (directories, mut files): (Vec<PathBuf>, Vec<PathBuf>) =
+        existing.into_iter().partition(|path| path.is_dir());
 
     for dir in directories {
         for entry in WalkDir::new(dir) {

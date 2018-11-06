@@ -5,7 +5,7 @@ use std::sync::{Arc, RwLock};
 use std::thread::{spawn, JoinHandle};
 
 use img_hash::{HashType, ImageHash};
-use serialize::base64::{ToBase64, STANDARD};  // , FromBase64, STANDARD};
+use serialize::base64::{ToBase64, STANDARD}; // , FromBase64, STANDARD};
 use sha2::{Digest, Sha256};
 
 use fileinfo::FileInfo;

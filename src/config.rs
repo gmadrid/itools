@@ -77,8 +77,8 @@ fn show_progress_value<'a>(matches: &clap::ArgMatches<'a>) -> bool {
 
 #[cfg(test)]
 mod testing {
-    use ItoolsError;
     use Config;
+    use ItoolsError;
 
     pub const CMD_NAME: &str = "CommandNameIgnored";
 
