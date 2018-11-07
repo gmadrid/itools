@@ -1,6 +1,7 @@
 extern crate itools;
 
 use std::error::Error;
+use std::path::Path;
 
 use itools::{expand_file_list, Config, Hasher, ItoolsError, PersistedCache, Result};
 
@@ -23,13 +24,15 @@ use itools::{expand_file_list, Config, Hasher, ItoolsError, PersistedCache, Resu
 fn run() -> Result<()> {
     let config = Config::new()?;
 
+    // This filename is unused right now. TODO: this is a bug. fix it.
+    let mut cache = PersistedCache::load(Path::new("xxx"));
+
     // TODO: report the missing files.
     let (files, _missing) = expand_file_list(config.files)?;
 
     // TODO: add the progress meter back in.
     let (hasher, agg_rx) = Hasher::run(files);
 
-    let mut cache = PersistedCache::new();
     cache.run(agg_rx);
 
     hasher.join();
