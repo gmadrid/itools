@@ -77,10 +77,25 @@ fn show_progress_value<'a>(matches: &clap::ArgMatches<'a>) -> bool {
 
 #[cfg(test)]
 mod testing {
+    use std::ffi::OsString;
+    use std::iter::Iterator;
+
     use Config;
     use ItoolsError;
 
     pub const CMD_NAME: &str = "CommandNameIgnored";
+
+    fn make_test_config<I, T>(itr: I) -> Config
+    where
+        I: IntoIterator<Item = T>,
+        T: Into<OsString> + Clone + From<&'static str>,
+    {
+        let mut vec = vec![CMD_NAME.into()];
+        vec.append(&mut itr.into_iter().collect());
+        vec.append(&mut vec!["foo".into(), "bar".into()]);
+
+        Config::new_from(vec).unwrap()
+    }
 
     #[test]
     fn test_no_file_args() {
@@ -106,5 +121,20 @@ mod testing {
         let c_many = Config::new_from(vec![CMD_NAME, "foo", "bar", "quux"]);
         assert!(c_many.is_ok());
         assert_eq!(c_many.unwrap().files, vec!["foo", "bar", "quux"])
+    }
+
+    #[test]
+    fn test_show_progress() {
+        let c_default = make_test_config(std::iter::empty::<OsString>());
+        assert_eq!(true, c_default.show_progress);
+
+        let c_no_progress = make_test_config(vec!["--no_progress"]);
+        assert_eq!(false, c_no_progress.show_progress);
+
+        let c_quiet = make_test_config(vec!["--quiet"]);
+        assert_eq!(false, c_quiet.show_progress);
+
+        let c_both = make_test_config(vec!["--quiet", "--no_progress"]);
+        assert_eq!(false, c_both.show_progress);
     }
 }
