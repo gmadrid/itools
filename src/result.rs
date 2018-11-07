@@ -15,6 +15,7 @@ pub enum ItoolsError {
     Clap(clap::Error),
     Image(image::ImageError),
     IO(io::Error),
+    Serde(serde_yaml::Error),
     WalkDir(walkdir::Error),
 }
 
@@ -33,6 +34,12 @@ impl From<image::ImageError> for ItoolsError {
 impl From<io::Error> for ItoolsError {
     fn from(err: io::Error) -> ItoolsError {
         ItoolsError::IO(err)
+    }
+}
+
+impl From<serde_yaml::Error> for ItoolsError {
+    fn from(err: serde_yaml::Error) -> ItoolsError {
+        ItoolsError::Serde(err)
     }
 }
 

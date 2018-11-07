@@ -75,10 +75,7 @@ fn make_file_reader(
     let handle = spawn(move || {
         for file in files {
             let buf = fs::read(&file).unwrap();
-            let fi = FileInfo {
-                filename: file,
-                ..FileInfo::default()
-            };
+            let fi = FileInfo::with_name(file);
             let fi_handle = Arc::new(RwLock::new(fi));
             let buf_handle = Arc::new(buf);
             tx0.send((Arc::clone(&fi_handle), Arc::clone(&buf_handle)))

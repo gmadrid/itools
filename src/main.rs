@@ -5,11 +5,6 @@ use std::path::Path;
 
 use itools::{expand_file_list, Config, Hasher, ItoolsError, PersistedCache, Result};
 
-// - Different hashers
-//   - Mean
-//   - Diff
-//   - Perceptual
-//   - MD5
 // - Outputter
 //   - to stderr
 //   - with open text
@@ -17,15 +12,12 @@ use itools::{expand_file_list, Config, Hasher, ItoolsError, PersistedCache, Resu
 //   - none
 //   - json
 //   - complete or just dups
-// - Persistence
-//   - save
-//   - load
 
 fn run() -> Result<()> {
     let config = Config::new()?;
 
     // This filename is unused right now. TODO: this is a bug. fix it.
-    let mut cache = PersistedCache::load(Path::new("xxx"));
+    let mut cache = PersistedCache::load(Path::new("xxx"))?;
 
     // TODO: report the missing files.
     let (files, _missing) = expand_file_list(config.files)?;
