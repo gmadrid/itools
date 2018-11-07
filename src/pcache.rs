@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use std::fs;
+use std::path::PathBuf;
 use std::sync::mpsc::{channel, Receiver, SyncSender};
 use std::sync::{Arc, RwLock};
 use std::thread::{self, spawn, JoinHandle};
@@ -8,7 +10,7 @@ use fileinfo::FileInfo;
 
 #[derive(Debug, Default)]
 pub struct PersistedCache {
-    cache: Arc<RwLock<HashMap<String, Vec<FileInfo>>>>,
+    cache: Arc<RwLock<HashMap<PathBuf, FileInfo>>>,
 
     listen_handle: Option<JoinHandle<()>>,
     save_handle: Option<JoinHandle<()>>,
@@ -28,13 +30,11 @@ impl PersistedCache {
 
         let handle = spawn(move || {
             for fi in rx {
-                let key = fi.sha2_hash.as_ref().unwrap().clone();
+                let key = fi.filename.clone();
                 cache
                     .write()
                     .unwrap()
-                    .entry(key)
-                    .or_insert_with(|| Vec::default())
-                    .push(fi);
+                    .insert(key, fi);
                 ltx.send(true).unwrap();
             }
         });
@@ -48,20 +48,18 @@ impl PersistedCache {
                     last_save_time = Instant::now();
 
                     let hashmap = &*cache2.read().unwrap();
-                    println!(
-                        "DDD\n{}",
-                        serde_yaml::to_string(&*cache2.read().unwrap()).unwrap()
-                    );
+                    fs::write("test_save_file.yaml", serde_yaml::to_string(hashmap).unwrap());
                 }
             }
-            // TODO: you nned to save one last time before quitting.
+            let hashmap = &*cache2.read().unwrap();
+            fs::write("test_save_file.yaml", serde_yaml::to_string(hashmap).unwrap());
         });
 
         self.listen_handle = Some(handle);
         self.save_handle = Some(save_handle);
     }
 
-    pub fn join(self) -> HashMap<String, Vec<FileInfo>> {
+    pub fn join(self) -> HashMap<PathBuf, FileInfo> {
         self.listen_handle.map(|lh| lh.join());
         self.save_handle.map(|sh| sh.join());
 
