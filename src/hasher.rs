@@ -7,7 +7,7 @@ use std::thread::{self, JoinHandle};
 use img_hash::{HashType, ImageHash};
 use serialize::base64::{ToBase64, STANDARD}; // , FromBase64, STANDARD};
 use sha2::{Digest, Sha256};
-use utils::{spawn_with_name};
+use utils::spawn_with_name;
 
 use fileinfo::FileInfo;
 
@@ -131,20 +131,24 @@ fn make_image_creator(
     let (tx2, rx2) = sync_channel(0);
 
     let handle = spawn_with_name("image_creator", move || {
-            for (fi, image_buf) in fi_receiver {
-                match image::load_from_memory(&image_buf) {
-                    Ok(im) => {
-                        let im_handle = Arc::new(im);
-                        tx0.send((Arc::clone(&fi), Arc::clone(&im_handle))).unwrap();
-                        tx1.send((Arc::clone(&fi), Arc::clone(&im_handle))).unwrap();
-                        tx2.send((fi, im_handle)).unwrap();
-                    },
-                    Err(err) => {
-                        println!("Error reading image for: {:?}\n{:?}", fi.read().unwrap().filename, err);
-                    }
+        for (fi, image_buf) in fi_receiver {
+            match image::load_from_memory(&image_buf) {
+                Ok(im) => {
+                    let im_handle = Arc::new(im);
+                    tx0.send((Arc::clone(&fi), Arc::clone(&im_handle))).unwrap();
+                    tx1.send((Arc::clone(&fi), Arc::clone(&im_handle))).unwrap();
+                    tx2.send((fi, im_handle)).unwrap();
+                }
+                Err(err) => {
+                    println!(
+                        "Error reading image for: {:?}\n{:?}",
+                        fi.read().unwrap().filename,
+                        err
+                    );
                 }
             }
-        });
+        }
+    });
 
     (rx0, rx1, rx2, handle)
 }
@@ -153,18 +157,16 @@ fn make_ahasher(
     rx: Receiver<(FileInfoHandle, ImageHandle)>,
     tx: SyncSender<FileInfoHandle>,
 ) -> JoinHandle<()> {
-    let handle = thread::Builder::new()
-        .name("ahasher".into())
-        .spawn(move || {
-            for (fi, image) in rx {
-                let ahash = ImageHash::hash(image.as_ref(), 8, HashType::Mean);
-                {
-                    let mut w = fi.write().unwrap();
-                    w.a_hash = Some(ahash.to_base64());
-                }
-                tx.send(fi).unwrap();
+    let handle = spawn_with_name("ahasher", move || {
+        for (fi, image) in rx {
+            let ahash = ImageHash::hash(image.as_ref(), 8, HashType::Mean);
+            {
+                let mut w = fi.write().unwrap();
+                w.a_hash = Some(ahash.to_base64());
             }
-        }).unwrap();
+            tx.send(fi).unwrap();
+        }
+    });
 
     handle
 }
@@ -173,18 +175,16 @@ fn make_dhasher(
     rx: Receiver<(FileInfoHandle, ImageHandle)>,
     tx: SyncSender<FileInfoHandle>,
 ) -> JoinHandle<()> {
-    let handle = thread::Builder::new()
-        .name("dhasher".into())
-        .spawn(move || {
-            for (fi, image) in rx {
-                let ahash = ImageHash::hash(image.as_ref(), 8, HashType::Gradient);
-                {
-                    let mut w = fi.write().unwrap();
-                    w.d_hash = Some(ahash.to_base64());
-                }
-                tx.send(fi).unwrap();
+    let handle = spawn_with_name("dhasher", move || {
+        for (fi, image) in rx {
+            let dhash = ImageHash::hash(image.as_ref(), 8, HashType::Gradient);
+            {
+                let mut w = fi.write().unwrap();
+                w.d_hash = Some(dhash.to_base64());
             }
-        }).unwrap();
+            tx.send(fi).unwrap();
+        }
+    });
 
     handle
 }
@@ -193,18 +193,16 @@ fn make_phasher(
     rx: Receiver<(FileInfoHandle, ImageHandle)>,
     tx: SyncSender<FileInfoHandle>,
 ) -> JoinHandle<()> {
-    let handle = thread::Builder::new()
-        .name("phasher".into())
-        .spawn(move || {
-            for (fi, image) in rx {
-                let phash = ImageHash::hash(image.as_ref(), 8, HashType::DCT);
-                {
-                    let mut w = fi.write().unwrap();
-                    w.p_hash = Some(phash.to_base64());
-                }
-                tx.send(fi).unwrap();
+    let handle = spawn_with_name("phasher", move || {
+        for (fi, image) in rx {
+            let phash = ImageHash::hash(image.as_ref(), 8, HashType::DCT);
+            {
+                let mut w = fi.write().unwrap();
+                w.p_hash = Some(phash.to_base64());
             }
-        }).unwrap();
+            tx.send(fi).unwrap();
+        }
+    });
 
     handle
 }
@@ -212,36 +210,34 @@ fn make_phasher(
 fn make_aggregator(fi_rx: Receiver<FileInfoHandle>) -> (Receiver<FileInfo>, JoinHandle<()>) {
     let (tx, rx) = sync_channel(0);
 
-    let handle = thread::Builder::new()
-        .name("aggregator".into())
-        .spawn(move || {
-            for fi in fi_rx {
-                let fi_complete;
-                {
-                    match fi.read() {
-                        Ok(fi_read) => {
-                            fi_complete = fi_read.a_hash.is_some()
-                                && fi_read.d_hash.is_some()
-                                && fi_read.p_hash.is_some()
-                                && fi_read.sha2_hash.is_some()
-                        }
-                        Err(fi_err) => {
-                            println!("GOT AN ERR: {:?}", fi_err);
-                            fi_complete = false;
-                        }
+    let handle = spawn_with_name("aggregator", move || {
+        for fi in fi_rx {
+            let fi_complete;
+            {
+                match fi.read() {
+                    Ok(fi_read) => {
+                        fi_complete = fi_read.a_hash.is_some()
+                            && fi_read.d_hash.is_some()
+                            && fi_read.p_hash.is_some()
+                            && fi_read.sha2_hash.is_some()
+                    }
+                    Err(fi_err) => {
+                        println!("GOT AN ERR: {:?}", fi_err);
+                        fi_complete = false;
                     }
                 }
-                if fi_complete {
-                    // try_unwrap may fail if all of the senders populated the FileInfo,
-                    // but the Arc hasn't yet been dropped. Because the Arc is dropped on
-                    // calling send(), this means that more messages will be arriving for
-                    // this FileInfo, so we can safely do nothing and move on.
-                    let _ = Arc::try_unwrap(fi).map(|rw_lock| {
-                        tx.send(rw_lock.into_inner().unwrap()).unwrap();
-                    });
-                }
             }
-        }).unwrap();
+            if fi_complete {
+                // try_unwrap may fail if all of the senders populated the FileInfo,
+                // but the Arc hasn't yet been dropped. Because the Arc is dropped on
+                // calling send(), this means that more messages will be arriving for
+                // this FileInfo, so we can safely do nothing and move on.
+                let _ = Arc::try_unwrap(fi).map(|rw_lock| {
+                    tx.send(rw_lock.into_inner().unwrap()).unwrap();
+                });
+            }
+        }
+    });
 
     (rx, handle)
 }

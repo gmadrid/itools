@@ -4,11 +4,12 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{channel, Receiver};
 use std::sync::{Arc, RwLock};
-use std::thread::{self, JoinHandle};
+use std::thread::JoinHandle;
 use std::time::Instant;
 
 use fileinfo::FileInfo;
 use result::Result;
+use utils::spawn_with_name;
 
 type HashTable = HashMap<PathBuf, FileInfo>;
 type HashHandle = Arc<RwLock<HashTable>>;
@@ -50,31 +51,27 @@ impl PersistedCache {
         // Send true to indicate some change that was made.
         let (ltx, lrx) = channel::<bool>();
 
-        let handle = thread::Builder::new()
-            .name("pcache_adder".into())
-            .spawn(move || {
-                for fi in rx {
-                    let key = fi.filename.clone();
-                    cache.write().unwrap().insert(key, fi);
-                    ltx.send(true).unwrap();
-                }
-            }).unwrap();
+        let handle = spawn_with_name("pcache_adder", move || {
+            for fi in rx {
+                let key = fi.filename.clone();
+                cache.write().unwrap().insert(key, fi);
+                ltx.send(true).unwrap();
+            }
+        });
 
         let owned_filename: PathBuf = filename.into();
-        let save_handle = thread::Builder::new()
-            .name("pcache_saver".into())
-            .spawn(move || {
-                let mut last_save_time = Instant::now();
-                for _ in lrx {
-                    // Every 5 seconds.
-                    let elapsed = last_save_time.elapsed();
-                    if elapsed.as_secs() >= 5 {
-                        last_save_time = Instant::now();
-                        Self::write_hash_to_file(&owned_filename, &cache2).unwrap();
-                    }
+        let save_handle = spawn_with_name("pcache_saver", move || {
+            let mut last_save_time = Instant::now();
+            for _ in lrx {
+                // Every 5 seconds.
+                let elapsed = last_save_time.elapsed();
+                if elapsed.as_secs() >= 5 {
+                    last_save_time = Instant::now();
+                    Self::write_hash_to_file(&owned_filename, &cache2).unwrap();
                 }
-                Self::write_hash_to_file(&owned_filename, &cache2).unwrap();
-            }).unwrap();
+            }
+            Self::write_hash_to_file(&owned_filename, &cache2).unwrap();
+        });
 
         self.listen_handle = Some(handle);
         self.save_handle = Some(save_handle);
