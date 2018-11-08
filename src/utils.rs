@@ -1,3 +1,6 @@
+use std::sync::mpsc::{Sender, SyncSender};
+use std::thread;
+
 pub fn bool_to_option<T, F: FnOnce() -> T>(b: bool, f: F) -> Option<T> {
     if b {
         Some(f())
@@ -17,6 +20,38 @@ where
         .name(name.into())
         .spawn(f)
         .unwrap()
+}
+
+pub trait SafeSend<T> {
+    fn safe_send(&self, payload: T)
+    where
+        T: Send;
+}
+
+impl<T> SafeSend<T> for Sender<T> {
+    fn safe_send(&self, payload: T)
+    where
+        T: Send,
+    {
+        match self.send(payload) {
+            Ok(_) => (),
+            Err(err) => println!("Error while sending from thread \"{}\": {:?}",
+                                 thread::current().name().unwrap_or("<unnamed>"), err),
+        }
+    }
+}
+
+impl<T> SafeSend<T> for SyncSender<T> {
+    fn safe_send(&self, payload: T)
+    where
+        T: Send,
+    {
+        match self.send(payload) {
+            Ok(_) => (),
+            Err(err) => println!("Error while sending from thread \"{}\": {:?}",
+                                 thread::current().name().unwrap_or("<unnamed>"), err),
+        }
+    }
 }
 
 #[cfg(test)]

@@ -7,7 +7,7 @@ use std::thread::{self, JoinHandle};
 use img_hash::{HashType, ImageHash};
 use serialize::base64::{ToBase64, STANDARD}; // , FromBase64, STANDARD};
 use sha2::{Digest, Sha256};
-use utils::spawn_with_name;
+use utils::{spawn_with_name, SafeSend};
 
 use fileinfo::FileInfo;
 
@@ -81,10 +81,8 @@ fn make_file_reader(
                 let fi = FileInfo::with_name(file);
                 let fi_handle = Arc::new(RwLock::new(fi));
                 let buf_handle = Arc::new(buf);
-                tx0.send((Arc::clone(&fi_handle), Arc::clone(&buf_handle)))
-                    .unwrap();
-                tx1.send((Arc::clone(&fi_handle), Arc::clone(&buf_handle)))
-                    .unwrap();
+                tx0.safe_send((Arc::clone(&fi_handle), Arc::clone(&buf_handle)));
+                tx1.safe_send((Arc::clone(&fi_handle), Arc::clone(&buf_handle)));
             }
         }).unwrap();
 
@@ -111,7 +109,7 @@ fn make_sha2_hasher(
                     let mut w = fi.write().unwrap();
                     w.sha2_hash = Some(hasher.result_reset().to_vec().to_base64(STANDARD));
                 }
-                tx_local.send(fi).unwrap();
+                tx_local.safe_send(fi);
             }
         }).unwrap();
 
@@ -135,9 +133,9 @@ fn make_image_creator(
             match image::load_from_memory(&image_buf) {
                 Ok(im) => {
                     let im_handle = Arc::new(im);
-                    tx0.send((Arc::clone(&fi), Arc::clone(&im_handle))).unwrap();
-                    tx1.send((Arc::clone(&fi), Arc::clone(&im_handle))).unwrap();
-                    tx2.send((fi, im_handle)).unwrap();
+                    tx0.safe_send((Arc::clone(&fi), Arc::clone(&im_handle)));
+                    tx1.safe_send((Arc::clone(&fi), Arc::clone(&im_handle)));
+                    tx2.safe_send((fi, im_handle));
                 }
                 Err(err) => {
                     println!(
@@ -164,7 +162,7 @@ fn make_ahasher(
                 let mut w = fi.write().unwrap();
                 w.a_hash = Some(ahash.to_base64());
             }
-            tx.send(fi).unwrap();
+            tx.safe_send(fi);
         }
     });
 
@@ -182,7 +180,7 @@ fn make_dhasher(
                 let mut w = fi.write().unwrap();
                 w.d_hash = Some(dhash.to_base64());
             }
-            tx.send(fi).unwrap();
+            tx.safe_send(fi);
         }
     });
 
@@ -200,7 +198,7 @@ fn make_phasher(
                 let mut w = fi.write().unwrap();
                 w.p_hash = Some(phash.to_base64());
             }
-            tx.send(fi).unwrap();
+            tx.safe_send(fi);
         }
     });
 
@@ -233,7 +231,7 @@ fn make_aggregator(fi_rx: Receiver<FileInfoHandle>) -> (Receiver<FileInfo>, Join
                 // calling send(), this means that more messages will be arriving for
                 // this FileInfo, so we can safely do nothing and move on.
                 let _ = Arc::try_unwrap(fi).map(|rw_lock| {
-                    tx.send(rw_lock.into_inner().unwrap()).unwrap();
+                    tx.safe_send(rw_lock.into_inner().unwrap());
                 });
             }
         }

@@ -9,7 +9,7 @@ use std::time::Instant;
 
 use fileinfo::FileInfo;
 use result::Result;
-use utils::spawn_with_name;
+use utils::{spawn_with_name, SafeSend};
 
 type HashTable = HashMap<PathBuf, FileInfo>;
 type HashHandle = Arc<RwLock<HashTable>>;
@@ -55,7 +55,7 @@ impl PersistedCache {
             for fi in rx {
                 let key = fi.filename.clone();
                 cache.write().unwrap().insert(key, fi);
-                ltx.send(true).unwrap();
+                ltx.safe_send(true);
             }
         });
 
