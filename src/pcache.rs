@@ -1,10 +1,10 @@
 use std::collections::HashMap;
-use std::fs::{File};
+use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{channel, Receiver};
 use std::sync::{Arc, RwLock};
-use std::thread::{spawn, JoinHandle};
+use std::thread::{self, JoinHandle};
 use std::time::Instant;
 
 use fileinfo::FileInfo;
@@ -40,55 +40,62 @@ impl PersistedCache {
         })
     }
 
-    pub fn run(&mut self, rx: Receiver<FileInfo>) {
+    pub fn run<T>(&mut self, filename: T, rx: Receiver<FileInfo>)
+    where
+        T: Into<PathBuf>,
+    {
         let cache = Arc::clone(&self.cache);
         let cache2 = Arc::clone(&self.cache);
 
         // Send true to indicate some change that was made.
         let (ltx, lrx) = channel::<bool>();
 
-        let handle = spawn(move || {
-            for fi in rx {
-                let key = fi.filename.clone();
-                cache
-                    .write()
-                    .unwrap()
-                    .insert(key, fi);
-                ltx.send(true).unwrap();
-            }
-        });
-
-        let save_handle = spawn(move || {
-            let mut last_save_time = Instant::now();
-            for _ in lrx {
-                // Every 5 seconds.
-                let elapsed = last_save_time.elapsed();
-                if elapsed.as_secs() >= 5 {
-                    last_save_time = Instant::now();
-                    Self::write_hash_to_file("ff", &cache2);
+        let handle = thread::Builder::new()
+            .name("pcache_adder".into())
+            .spawn(move || {
+                for fi in rx {
+                    let key = fi.filename.clone();
+                    cache.write().unwrap().insert(key, fi);
+                    ltx.send(true).unwrap();
                 }
-            }
-            Self::write_hash_to_file("ff", &cache2);
-        });
+            }).unwrap();
+
+        let owned_filename: PathBuf = filename.into();
+        let save_handle = thread::Builder::new()
+            .name("pcache_saver".into())
+            .spawn(move || {
+                let mut last_save_time = Instant::now();
+                for _ in lrx {
+                    // Every 5 seconds.
+                    let elapsed = last_save_time.elapsed();
+                    if elapsed.as_secs() >= 5 {
+                        last_save_time = Instant::now();
+                        Self::write_hash_to_file(&owned_filename, &cache2).unwrap();
+                    }
+                }
+                Self::write_hash_to_file(&owned_filename, &cache2).unwrap();
+            }).unwrap();
 
         self.listen_handle = Some(handle);
         self.save_handle = Some(save_handle);
     }
 
     fn read_hash<T>(rdr: T) -> Result<HashTable>
-        where T: Read
+    where
+        T: Read,
     {
         let hash_table = serde_yaml::from_reader(rdr)?;
         Ok(hash_table)
     }
 
     fn write_hash_to_file<T>(filename: T, handle: &HashHandle) -> Result<()>
-        where T: AsRef<Path>
+    where
+        T: AsRef<Path>,
     {
         // This fails if handle is poisoned. That would be a programmer error, so
         // we want to panic.
         let hashmap = &*handle.read().unwrap();
-        
+
         let f = File::create(filename)?;
         serde_yaml::to_writer(f, hashmap).unwrap();
         Ok(())

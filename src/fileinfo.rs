@@ -24,9 +24,9 @@ impl FileInfo {
 #[cfg(test)]
 mod test {
     use std::path::PathBuf;
-    
+
     use FileInfo;
-    
+
     #[test]
     fn test_with_name() {
         let name = "/foobar/baz";
@@ -37,5 +37,5 @@ mod test {
         assert_eq!(None, fi.p_hash);
         assert_eq!(None, fi.sha2_hash);
     }
-    
+
 }

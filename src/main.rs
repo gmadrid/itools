@@ -1,7 +1,7 @@
 extern crate itools;
 
 use std::error::Error;
-use std::path::Path;
+use std::path::PathBuf;
 
 use itools::{expand_file_list, Config, Hasher, ItoolsError, PersistedCache, Result};
 
@@ -15,9 +15,14 @@ use itools::{expand_file_list, Config, Hasher, ItoolsError, PersistedCache, Resu
 
 fn run() -> Result<()> {
     let config = Config::new()?;
+    let filename = PathBuf::from("test_output.yaml");
 
-    // This filename is unused right now. TODO: this is a bug. fix it.
-    let mut cache = PersistedCache::load(Path::new("xxx"))?;
+    // If we fail to load the cached file, create a new cache.
+    // TODO: we may want to make this an option to avoid overwriting data.
+    let mut cache = match PersistedCache::load(&filename) {
+        Ok(c) => c,
+        Err(_) => PersistedCache::new(),
+    };
 
     // TODO: report the missing files.
     let (files, _missing) = expand_file_list(config.files)?;
@@ -25,10 +30,11 @@ fn run() -> Result<()> {
     // TODO: add the progress meter back in.
     let (hasher, agg_rx) = Hasher::run(files);
 
-    cache.run(agg_rx);
+    cache.run(filename, agg_rx);
 
-    hasher.join();
+    // Join the cache first to ensure that it's done before its senders are dropped.
     cache.join();
+    hasher.join();
 
     Ok(())
 }
