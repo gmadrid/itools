@@ -7,6 +7,7 @@ use std::thread::{self, JoinHandle};
 use img_hash::{HashType, ImageHash};
 use serialize::base64::{ToBase64, STANDARD}; // , FromBase64, STANDARD};
 use sha2::{Digest, Sha256};
+use utils::{spawn_with_name};
 
 use fileinfo::FileInfo;
 
@@ -129,17 +130,21 @@ fn make_image_creator(
     let (tx1, rx1) = sync_channel(0);
     let (tx2, rx2) = sync_channel(0);
 
-    let handle = thread::Builder::new()
-        .name("image_creator".into())
-        .spawn(move || {
+    let handle = spawn_with_name("image_creator", move || {
             for (fi, image_buf) in fi_receiver {
-                let im = image::load_from_memory(&image_buf).unwrap();
-                let im_handle = Arc::new(im);
-                tx0.send((Arc::clone(&fi), Arc::clone(&im_handle))).unwrap();
-                tx1.send((Arc::clone(&fi), Arc::clone(&im_handle))).unwrap();
-                tx2.send((fi, im_handle)).unwrap();
+                match image::load_from_memory(&image_buf) {
+                    Ok(im) => {
+                        let im_handle = Arc::new(im);
+                        tx0.send((Arc::clone(&fi), Arc::clone(&im_handle))).unwrap();
+                        tx1.send((Arc::clone(&fi), Arc::clone(&im_handle))).unwrap();
+                        tx2.send((fi, im_handle)).unwrap();
+                    },
+                    Err(err) => {
+                        println!("Error reading image for: {:?}\n{:?}", fi.read().unwrap().filename, err);
+                    }
+                }
             }
-        }).unwrap();
+        });
 
     (rx0, rx1, rx2, handle)
 }

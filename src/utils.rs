@@ -6,6 +6,20 @@ pub fn bool_to_option<T, F: FnOnce() -> T>(b: bool, f: F) -> Option<T> {
     }
 }
 
+pub fn spawn_with_name<T, U, F>(name: T, f: F) ->
+    std::thread::JoinHandle<U>
+where
+    T: Into<String>,
+    F: FnOnce() -> U + Send + 'static,
+    U: Send + 'static,
+{
+    // TODO: improve error handling here.
+    std::thread::Builder::new()
+        .name(name.into())
+        .spawn(f)
+        .unwrap()
+}
+
 #[cfg(test)]
 mod test {
     use bool_to_option;
