@@ -3,7 +3,7 @@ use std::ffi::{OsStr, OsString};
 
 use clap::{self, App, Arg};
 
-use Result;
+use super::Result;
 
 #[derive(Default, Debug)]
 pub struct Config {
@@ -86,8 +86,8 @@ mod testing {
     use std::ffi::OsString;
     use std::iter::Iterator;
 
-    use Config;
-    use ItoolsError;
+    use super::Config;
+    use super::super::result::ItoolsError;
 
     pub const CMD_NAME: &str = "CommandNameIgnored";
 

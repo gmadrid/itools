@@ -32,7 +32,7 @@ impl FileInfo {
 mod test {
     use std::path::PathBuf;
 
-    use FileInfo;
+    use super::FileInfo;
 
     #[test]
     fn test_is_complete() {

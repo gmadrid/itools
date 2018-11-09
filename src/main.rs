@@ -3,8 +3,14 @@ extern crate itools;
 use std::error::Error;
 use std::path::PathBuf;
 
-use itools::{
-    bool_to_option, expand_file_list, new_counter, Config, Hasher, ItoolsError, PersistedCache,
+use itools::neardups::{
+    bool_to_option,
+    expand_file_list,
+    new_counter,
+    Config,
+    Hasher,
+    ItoolsError,
+    PersistedCache,
     Result,
 };
 

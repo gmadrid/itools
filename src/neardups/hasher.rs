@@ -7,9 +7,9 @@ use std::thread::{self, JoinHandle};
 use img_hash::{HashType, ImageHash};
 use serialize::base64::{ToBase64, STANDARD};
 use sha2::{Digest, Sha256};
-use utils::{spawn_with_name, SafeSend};
 
-use fileinfo::FileInfo;
+use super::fileinfo::FileInfo;
+use super::utils::{spawn_with_name, SafeSend};
 
 #[derive(Debug)]
 pub struct Hasher {
