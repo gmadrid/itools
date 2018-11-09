@@ -3,7 +3,10 @@ extern crate itools;
 use std::error::Error;
 use std::path::PathBuf;
 
-use itools::{expand_file_list, Config, Hasher, ItoolsError, PersistedCache, Result};
+use itools::{
+    bool_to_option, expand_file_list, new_counter, Config, Hasher, ItoolsError, PersistedCache,
+    Result,
+};
 
 // - Outputter
 //   - to stderr
@@ -28,9 +31,11 @@ fn run() -> Result<()> {
     let (files, _missing) = expand_file_list(config.files)?;
 
     // TODO: add the progress meter back in.
+    let num_files = files.len() as u64;
     let (hasher, agg_rx) = Hasher::run(files);
 
-    cache.run(filename, agg_rx);
+    let pb = bool_to_option(config.show_progress, || new_counter(num_files));
+    cache.run(filename, agg_rx, pb);
 
     // Join the cache first to ensure that it's done before its senders are dropped.
     cache.join();

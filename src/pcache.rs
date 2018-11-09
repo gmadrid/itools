@@ -7,7 +7,10 @@ use std::sync::{Arc, RwLock};
 use std::thread::JoinHandle;
 use std::time::Instant;
 
+use indicatif::ProgressBar;
+
 use fileinfo::FileInfo;
+use progress::Progress;
 use result::Result;
 use utils::{spawn_with_name, SafeSend};
 
@@ -41,7 +44,7 @@ impl PersistedCache {
         })
     }
 
-    pub fn run<T>(&mut self, filename: T, rx: Receiver<FileInfo>)
+    pub fn run<T>(&mut self, filename: T, rx: Receiver<FileInfo>, pb: Option<ProgressBar>)
     where
         T: Into<PathBuf>,
     {
@@ -63,6 +66,8 @@ impl PersistedCache {
         let save_handle = spawn_with_name("pcache_saver", move || {
             let mut last_save_time = Instant::now();
             for _ in lrx {
+                pb.inc();
+
                 // Every 5 seconds.
                 let elapsed = last_save_time.elapsed();
                 if elapsed.as_secs() >= 5 {

@@ -205,7 +205,9 @@ fn make_phasher(
     handle
 }
 
-fn make_aggregator(fi_rx: Receiver<FileInfoHandle>) -> (Receiver<FileInfo>, JoinHandle<()>) {
+fn make_aggregator(
+    fi_rx: Receiver<FileInfoHandle>
+) -> (Receiver<FileInfo>, JoinHandle<()>) {
     let (tx, rx) = sync_channel(0);
 
     let handle = spawn_with_name("aggregator", move || {
