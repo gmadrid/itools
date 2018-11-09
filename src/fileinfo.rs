@@ -19,6 +19,13 @@ impl FileInfo {
             ..FileInfo::default()
         }
     }
+
+    pub fn is_complete(&self) -> bool {
+        self.a_hash.is_some()
+            && self.d_hash.is_some()
+            && self.p_hash.is_some()
+            && self.sha2_hash.is_some()
+    }
 }
 
 #[cfg(test)]
@@ -26,6 +33,26 @@ mod test {
     use std::path::PathBuf;
 
     use FileInfo;
+
+    #[test]
+    fn test_is_complete() {
+        let fi = FileInfo::default();
+        assert_eq!(false, fi.is_complete());
+
+        let fi = FileInfo {
+            a_hash: Some("sisisi".into()),
+            ..fi
+        };
+        assert_eq!(false, fi.is_complete());
+
+        let fi = FileInfo {
+            d_hash: Some("foobar".into()),
+            p_hash: Some("blah".into()),
+            sha2_hash: Some("xxxxx".into()),
+            ..fi
+        };
+        assert_eq!(true, fi.is_complete());
+    }
 
     #[test]
     fn test_with_name() {

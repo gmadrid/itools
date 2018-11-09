@@ -65,7 +65,8 @@ impl PersistedCache {
         let owned_filename: PathBuf = filename.into();
         let save_handle = spawn_with_name("pcache_saver", move || {
             let mut last_save_time = Instant::now();
-            for _ in pb.wrap_iter(lrx) {
+            for _ in lrx {
+                pb.inc();
                 // Every 5 seconds.
                 let elapsed = last_save_time.elapsed();
                 if elapsed.as_secs() >= 5 {

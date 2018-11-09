@@ -205,28 +205,15 @@ fn make_phasher(
     handle
 }
 
-fn make_aggregator(
-    fi_rx: Receiver<FileInfoHandle>
-) -> (Receiver<FileInfo>, JoinHandle<()>) {
+fn make_aggregator(fi_rx: Receiver<FileInfoHandle>) -> (Receiver<FileInfo>, JoinHandle<()>) {
     let (tx, rx) = sync_channel(0);
 
     let handle = spawn_with_name("aggregator", move || {
         for fi in fi_rx {
-            let fi_complete;
-            {
-                match fi.read() {
-                    Ok(fi_read) => {
-                        fi_complete = fi_read.a_hash.is_some()
-                            && fi_read.d_hash.is_some()
-                            && fi_read.p_hash.is_some()
-                            && fi_read.sha2_hash.is_some()
-                    }
-                    Err(fi_err) => {
-                        println!("GOT AN ERR: {:?}", fi_err);
-                        fi_complete = false;
-                    }
-                }
-            }
+            let fi_complete = fi
+                .read()
+                .map(|f| f.is_complete())
+                .unwrap_or(false);
             if fi_complete {
                 // try_unwrap may fail if all of the senders populated the FileInfo,
                 // but the Arc hasn't yet been dropped. Because the Arc is dropped on
