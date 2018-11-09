@@ -7,6 +7,7 @@ use Result;
 
 #[derive(Default, Debug)]
 pub struct Config {
+    pub show_output: bool,
     pub files: Vec<OsString>,
     pub show_progress: bool,
 }
@@ -24,6 +25,7 @@ impl Config {
         let matches = build_clap_spec().get_matches_from_safe(itr)?;
 
         Ok(Config {
+            show_output: show_output(&matches),
             files: files_values(&matches),
             show_progress: show_progress_value(&matches),
         })
@@ -75,6 +77,10 @@ fn show_progress_value<'a>(matches: &clap::ArgMatches<'a>) -> bool {
     !matches.is_present(NO_PROGRESS_ARG_NAME) && !quiet_value(matches)
 }
 
+fn show_output<'a>(matches: &clap::ArgMatches<'a>) -> bool {
+    !quiet_value(matches)
+}
+
 #[cfg(test)]
 mod testing {
     use std::ffi::OsString;
@@ -95,6 +101,15 @@ mod testing {
         vec.append(&mut vec!["foo".into(), "bar".into()]);
 
         Config::new_from(vec).unwrap()
+    }
+
+    #[test]
+    fn test_show_output() {
+        let c_show = make_test_config(Vec::<std::ffi::OsString>::new());
+        assert_eq!(true, c_show.show_output);
+
+        let c_quiet = make_test_config(vec!["--quiet"]);
+        assert_eq!(false, c_quiet.show_output);
     }
 
     #[test]
