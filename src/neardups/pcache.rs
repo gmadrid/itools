@@ -9,10 +9,10 @@ use std::time::Instant;
 
 use indicatif::ProgressBar;
 
-use fileinfo::FileInfo;
-use progress::Progress;
-use result::Result;
-use utils::{spawn_with_name, SafeSend};
+use super::fileinfo::FileInfo;
+use super::progress::Progress;
+use super::result::Result;
+use super::utils::{spawn_with_name, SafeSend};
 
 type HashTable = HashMap<PathBuf, FileInfo>;
 type HashHandle = Arc<RwLock<HashTable>>;
@@ -67,7 +67,6 @@ impl PersistedCache {
             let mut last_save_time = Instant::now();
             for _ in lrx {
                 pb.inc();
-
                 // Every 5 seconds.
                 let elapsed = last_save_time.elapsed();
                 if elapsed.as_secs() >= 5 {

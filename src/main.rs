@@ -3,8 +3,14 @@ extern crate itools;
 use std::error::Error;
 use std::path::PathBuf;
 
-use itools::{
-    bool_to_option, expand_file_list, new_counter, Config, Hasher, ItoolsError, PersistedCache,
+use itools::neardups::{
+    bool_to_option,
+    expand_file_list,
+    new_counter,
+    Config,
+    Hasher,
+    ItoolsError,
+    PersistedCache,
     Result,
 };
 
@@ -30,7 +36,6 @@ fn run() -> Result<()> {
     // TODO: report the missing files.
     let (files, _missing) = expand_file_list(config.files)?;
 
-    // TODO: add the progress meter back in.
     let num_files = files.len() as u64;
     let (hasher, agg_rx) = Hasher::run(files);
 
@@ -49,7 +54,6 @@ fn run() -> Result<()> {
 }
 
 fn main() {
-    // TODO: deal with Clap errors by printing usage.
     match run() {
         Ok(_) => (),
         Err(ItoolsError::Clap(err)) => println!("{}", err.description()),

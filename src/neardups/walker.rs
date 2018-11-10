@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use walkdir::WalkDir;
 
-use Result;
+use super::result::Result;
 
 lazy_static! {
     static ref EXTENSIONS: HashSet<OsString> = {

@@ -56,7 +56,7 @@ impl<T> SafeSend<T> for SyncSender<T> {
 
 #[cfg(test)]
 mod test {
-    use bool_to_option;
+    use super::bool_to_option;
 
     #[test]
     fn test_bool_to_option_false() {
