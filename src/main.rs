@@ -41,6 +41,10 @@ fn run() -> Result<()> {
     cache.join();
     hasher.join();
 
+    if !config.cache_only {
+        println!("search not implemented yet.");
+    }
+
     Ok(())
 }
 

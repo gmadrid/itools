@@ -7,6 +7,7 @@ use Result;
 
 #[derive(Default, Debug)]
 pub struct Config {
+    pub cache_only: bool,
     pub files: Vec<OsString>,
     pub show_progress: bool,
 }
@@ -24,6 +25,7 @@ impl Config {
         let matches = build_clap_spec().get_matches_from_safe(itr)?;
 
         Ok(Config {
+            cache_only: cache_only(&matches),
             files: files_values(&matches),
             show_progress: show_progress_value(&matches),
         })
@@ -36,6 +38,7 @@ const ABOUT: &str = "Finds dup and near-dup image files.";
 const AUTHOR: &str = "George Madrid <gmadrid@gmail.com>";
 const VERSION: &str = "0.1.0";
 
+const CACHE_ONLY_ARG_NAME: &str = "cache_only";
 const FILES_ARG_NAME: &str = "files";
 const NO_PROGRESS_ARG_NAME: &str = "no_progress";
 const QUIET_ARG_NAME: &str = "quiet";
@@ -45,6 +48,9 @@ fn build_clap_spec<'a, 'b>() -> clap::App<'a, 'b> {
     let quiet_arg = Arg::with_name(QUIET_ARG_NAME)
         .long(QUIET_ARG_NAME)
         .short("q");
+    let cache_only_arg = Arg::with_name(CACHE_ONLY_ARG_NAME)
+        .long(CACHE_ONLY_ARG_NAME)
+        .short("c");
     let files_arg = Arg::with_name(FILES_ARG_NAME)
         .multiple(true)
         .takes_value(true)
@@ -54,9 +60,14 @@ fn build_clap_spec<'a, 'b>() -> clap::App<'a, 'b> {
         .about(ABOUT)
         .author(AUTHOR)
         .version(VERSION)
+        .arg(cache_only_arg)
         .arg(no_progress_arg)
         .arg(quiet_arg)
         .arg(files_arg)
+}
+
+fn cache_only<'a>(matches: &clap::ArgMatches<'a>) -> bool {
+    matches.is_present(CACHE_ONLY_ARG_NAME)
 }
 
 fn files_values<'a>(matches: &clap::ArgMatches<'a>) -> Vec<OsString> {
@@ -136,5 +147,14 @@ mod testing {
 
         let c_both = make_test_config(vec!["--quiet", "--no_progress"]);
         assert_eq!(false, c_both.show_progress);
+    }
+
+    #[test]
+    fn test_cache_only() {
+        let c_default = make_test_config(std::iter::empty::<OsString>());
+        assert_eq!(false, c_default.cache_only);
+
+        let c_cache_only = make_test_config(vec!["--cache_only"]);
+        assert_eq!(true, c_cache_only.cache_only);
     }
 }
