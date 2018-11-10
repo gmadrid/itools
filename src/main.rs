@@ -23,6 +23,7 @@ fn run() -> Result<()> {
     let mut cache = if !config.cache_file.exists() {
         PersistedCache::new()
     } else {
+        // TODO: report this error better.
         match PersistedCache::load(&config.cache_file) {
             Ok(c) => c,
             Err(_) => PersistedCache::new(),
