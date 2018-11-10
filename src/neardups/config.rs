@@ -1,5 +1,6 @@
 use std::env;
 use std::ffi::{OsStr, OsString};
+use std::path::PathBuf;
 
 use clap::{self, App, Arg};
 
@@ -7,6 +8,7 @@ use super::Result;
 
 #[derive(Default, Debug)]
 pub struct Config {
+    pub cache_file: PathBuf,
     pub cache_only: bool,
     pub show_output: bool,
     pub files: Vec<OsString>,
@@ -26,6 +28,7 @@ impl Config {
         let matches = build_clap_spec().get_matches_from_safe(itr)?;
 
         Ok(Config {
+            cache_file: cache_file(&matches),
             cache_only: cache_only(&matches),
             show_output: show_output(&matches),
             files: files_values(&matches),
@@ -40,6 +43,9 @@ const ABOUT: &str = "Finds dup and near-dup image files.";
 const AUTHOR: &str = "George Madrid <gmadrid@gmail.com>";
 const VERSION: &str = "0.1.0";
 
+const CACHE_FILE_ARG_NAME: &str = "cache_file";
+const CACHE_FILE_ENV_NAME: &str = "NDUPS_CACHE_FILE";
+const CACHE_FILE_DEFAULT_VALUE: &str = "ndups_cache";
 const CACHE_ONLY_ARG_NAME: &str = "cache_only";
 const FILES_ARG_NAME: &str = "files";
 const NO_PROGRESS_ARG_NAME: &str = "no_progress";
@@ -53,6 +59,12 @@ fn build_clap_spec<'a, 'b>() -> clap::App<'a, 'b> {
     let cache_only_arg = Arg::with_name(CACHE_ONLY_ARG_NAME)
         .long(CACHE_ONLY_ARG_NAME)
         .short("c");
+    let cache_file_arg = Arg::with_name(CACHE_FILE_ARG_NAME)
+        .long(CACHE_FILE_ARG_NAME)
+        .short("f")
+        .env(CACHE_FILE_ENV_NAME)
+        .takes_value(true)
+        .default_value(CACHE_FILE_DEFAULT_VALUE);
     let files_arg = Arg::with_name(FILES_ARG_NAME)
         .multiple(true)
         .takes_value(true)
@@ -62,10 +74,18 @@ fn build_clap_spec<'a, 'b>() -> clap::App<'a, 'b> {
         .about(ABOUT)
         .author(AUTHOR)
         .version(VERSION)
+        .arg(cache_file_arg)
         .arg(cache_only_arg)
         .arg(no_progress_arg)
         .arg(quiet_arg)
         .arg(files_arg)
+}
+
+fn cache_file<'a>(matches: &clap::ArgMatches<'a>) -> PathBuf {
+    matches
+        .value_of_os(CACHE_FILE_ARG_NAME)
+        .unwrap_or(&OsString::from(CACHE_FILE_DEFAULT_VALUE))
+        .into()
 }
 
 fn cache_only<'a>(matches: &clap::ArgMatches<'a>) -> bool {
@@ -97,8 +117,8 @@ mod testing {
     use std::ffi::OsString;
     use std::iter::Iterator;
 
-    use super::Config;
     use super::super::result::ItoolsError;
+    use super::Config;
 
     pub const CMD_NAME: &str = "CommandNameIgnored";
 

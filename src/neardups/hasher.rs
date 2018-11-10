@@ -210,10 +210,7 @@ fn make_aggregator(fi_rx: Receiver<FileInfoHandle>) -> (Receiver<FileInfo>, Join
 
     let handle = spawn_with_name("aggregator", move || {
         for fi in fi_rx {
-            let fi_complete = fi
-                .read()
-                .map(|f| f.is_complete())
-                .unwrap_or(false);
+            let fi_complete = fi.read().map(|f| f.is_complete()).unwrap_or(false);
             if fi_complete {
                 // try_unwrap may fail if all of the senders populated the FileInfo,
                 // but the Arc hasn't yet been dropped. Because the Arc is dropped on

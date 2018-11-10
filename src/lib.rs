@@ -13,4 +13,3 @@ extern crate sha2;
 extern crate walkdir;
 
 pub mod neardups;
-

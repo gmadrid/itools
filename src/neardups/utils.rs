@@ -35,8 +35,11 @@ impl<T> SafeSend<T> for Sender<T> {
     {
         match self.send(payload) {
             Ok(_) => (),
-            Err(err) => println!("Error while sending from thread \"{}\": {:?}",
-                                 thread::current().name().unwrap_or("<unnamed>"), err),
+            Err(err) => println!(
+                "Error while sending from thread \"{}\": {:?}",
+                thread::current().name().unwrap_or("<unnamed>"),
+                err
+            ),
         }
     }
 }
@@ -48,8 +51,11 @@ impl<T> SafeSend<T> for SyncSender<T> {
     {
         match self.send(payload) {
             Ok(_) => (),
-            Err(err) => println!("Error while sending from thread \"{}\": {:?}",
-                                 thread::current().name().unwrap_or("<unnamed>"), err),
+            Err(err) => println!(
+                "Error while sending from thread \"{}\": {:?}",
+                thread::current().name().unwrap_or("<unnamed>"),
+                err
+            ),
         }
     }
 }
