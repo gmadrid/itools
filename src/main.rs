@@ -7,14 +7,6 @@ use itools::neardups::{
     Result,
 };
 
-// - Outputter
-//   - to stderr
-//   - with open text
-//   - with opener
-//   - none
-//   - json
-//   - complete or just dups
-
 fn run() -> Result<()> {
     let config = Config::new()?;
 
@@ -33,8 +25,15 @@ fn run() -> Result<()> {
     // TODO: report the missing files.
     let (files, _missing) = expand_file_list(config.files)?;
 
-    let num_files = files.len() as u64;
-    let (hasher, agg_rx) = Hasher::run(files);
+    let mut files_to_hash = Vec::new();
+    for filename in &files {
+        if !cache.contains_file(filename) {
+            files_to_hash.push(filename.to_owned());
+        }
+    }
+
+    let num_files = files_to_hash.len() as u64;
+    let (hasher, agg_rx) = Hasher::run(files_to_hash);
 
     let pb = bool_to_option(config.show_progress, || new_counter(num_files));
     cache.run(config.cache_file, agg_rx, pb);

@@ -81,6 +81,10 @@ impl PersistedCache {
         self.save_handle = Some(save_handle);
     }
 
+    pub fn contains_file(&self, path: &Path) -> bool {
+        self.cache.read().unwrap().contains_key(path)
+    }
+
     fn read_hash<T>(rdr: T) -> Result<HashTable>
     where
         T: Read,
