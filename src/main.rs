@@ -3,8 +3,8 @@ extern crate itools;
 use std::error::Error;
 
 use itools::neardups::{
-    bool_to_option, expand_file_list, new_counter, Config, Hasher, ItoolsError, PersistedCache,
-    Result,
+    bool_to_option, expand_file_list, find_dups, new_counter, output_matches, Config, Hasher,
+    ItoolsError, PersistedCache, Result,
 };
 
 fn run() -> Result<()> {
@@ -39,10 +39,12 @@ fn run() -> Result<()> {
     cache.run(config.cache_file, agg_rx, pb);
 
     hasher.join();
-    cache.join();
+    let fileinfo = cache.join();
 
     if !config.cache_only {
-        println!("search not implemented yet.");
+        let matches = find_dups(files, fileinfo);
+
+        output_matches(matches);
     }
 
     Ok(())
