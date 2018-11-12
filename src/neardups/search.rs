@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use super::fileinfo::FileInfo;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Deserialize, Serialize)]
 pub struct Matches {
     pub filename: PathBuf,
     pub matched_files: Vec<PathBuf>,

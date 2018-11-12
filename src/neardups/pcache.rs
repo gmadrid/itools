@@ -67,11 +67,12 @@ impl PersistedCache {
             let mut last_save_time = Instant::now();
             for _ in lrx {
                 pb.inc();
-                // Every 5 seconds.
+                // Every 15 seconds.
                 let elapsed = last_save_time.elapsed();
-                if elapsed.as_secs() >= 5 {
-                    last_save_time = Instant::now();
+                if elapsed.as_secs() >= 15 {
+                    // TODO: You need to write this atomically.
                     Self::write_hash_to_file(&owned_filename, &cache2).unwrap();
+                    last_save_time = Instant::now();
                 }
             }
             Self::write_hash_to_file(&owned_filename, &cache2).unwrap();

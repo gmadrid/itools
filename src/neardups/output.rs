@@ -4,8 +4,16 @@ pub fn new_no_output() -> DynamicOutput {
     DynamicOutput::None(NoOutput::default())
 }
 
+pub fn new_open_output() -> DynamicOutput {
+    DynamicOutput::Open(OpenOutput::default())
+}
+
 pub fn new_text_output() -> DynamicOutput {
     DynamicOutput::Text(TextOutput::default())
+}
+
+pub fn new_yaml_output() -> DynamicOutput {
+    DynamicOutput::Yaml(YamlOutput::default())
 }
 
 pub trait Output {
@@ -15,7 +23,9 @@ pub trait Output {
 #[derive(Debug)]
 pub enum DynamicOutput {
     None(NoOutput),
+    Open(OpenOutput),
     Text(TextOutput),
+    Yaml(YamlOutput),
 }
 
 impl Output for DynamicOutput {
@@ -23,7 +33,9 @@ impl Output for DynamicOutput {
         use self::DynamicOutput::*;
         match self {
             None(no) => no.output(matches),
+            Open(oo) => oo.output(matches),
             Text(to) => to.output(matches),
+            Yaml(yo) => yo.output(matches),
         };
     }
 }
@@ -59,4 +71,22 @@ pub struct NoOutput();
 
 impl Output for NoOutput {
     fn output(&self, _matches: Vec<Matches>) {}
+}
+
+#[derive(Debug, Default)]
+pub struct OpenOutput();
+
+impl Output for OpenOutput {
+    fn output(&self, _matches: Vec<Matches>) {
+        panic!("WOTCHA!");
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct YamlOutput();
+
+impl Output for YamlOutput {
+    fn output(&self, matches: Vec<Matches>) {
+        serde_yaml::to_writer(std::io::stdout(), &matches).unwrap();
+    }
 }

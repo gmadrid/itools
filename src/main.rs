@@ -2,10 +2,9 @@ extern crate itools;
 
 use std::error::Error;
 
-use itools::neardups::output::Output;
 use itools::neardups::{
-    bool_to_option, expand_file_list, find_dups, new_counter, output, Config, Hasher, ItoolsError,
-    PersistedCache, Result,
+    bool_to_option, expand_file_list, find_dups, new_counter, output::Output, Config, Hasher,
+    ItoolsError, PersistedCache, Result,
 };
 
 fn run() -> Result<()> {

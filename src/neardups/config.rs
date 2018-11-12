@@ -4,7 +4,9 @@ use std::path::PathBuf;
 
 use clap::{self, App, Arg};
 
-use super::output::{new_no_output, new_text_output, DynamicOutput};
+use super::output::{
+    new_no_output, new_open_output, new_text_output, new_yaml_output, DynamicOutput,
+};
 use super::Result;
 
 #[derive(Default, Debug)]
@@ -32,7 +34,7 @@ impl Config {
             cache_file: cache_file(&matches),
             cache_only: cache_only(&matches),
             files: files_values(&matches),
-            output: show_output(&matches),
+            output: choose_output(&matches),
             show_progress: show_progress_value(&matches),
         })
     }
@@ -49,6 +51,11 @@ const CACHE_FILE_ENV_NAME: &str = "NDUPS_CACHE_FILE";
 const CACHE_FILE_DEFAULT_VALUE: &str = "ndups_cache";
 const CACHE_ONLY_ARG_NAME: &str = "cache_only";
 const FILES_ARG_NAME: &str = "files";
+const FORMAT_ARG_NAME: &str = "format";
+const FORMAT_NONE_VALUE_NAME: &str = "none";
+const FORMAT_OPEN_VALUE_NAME: &str = "open";
+const FORMAT_TEXT_VALUE_NAME: &str = "text";
+const FORMAT_YAML_VALUE_NAME: &str = "yaml";
 const NO_PROGRESS_ARG_NAME: &str = "no_progress";
 const QUIET_ARG_NAME: &str = "quiet";
 
@@ -62,7 +69,6 @@ fn build_clap_spec<'a, 'b>() -> clap::App<'a, 'b> {
         .short("c");
     let cache_file_arg = Arg::with_name(CACHE_FILE_ARG_NAME)
         .long(CACHE_FILE_ARG_NAME)
-        .short("f")
         .env(CACHE_FILE_ENV_NAME)
         .takes_value(true)
         .default_value(CACHE_FILE_DEFAULT_VALUE);
@@ -70,6 +76,16 @@ fn build_clap_spec<'a, 'b>() -> clap::App<'a, 'b> {
         .multiple(true)
         .takes_value(true)
         .required(true);
+    let format_arg = Arg::with_name(FORMAT_ARG_NAME)
+        .long(FORMAT_ARG_NAME)
+        .short("f")
+        .takes_value(true)
+        .possible_values(&[
+            FORMAT_NONE_VALUE_NAME,
+            FORMAT_OPEN_VALUE_NAME,
+            FORMAT_TEXT_VALUE_NAME,
+            FORMAT_YAML_VALUE_NAME,
+        ]).default_value(FORMAT_TEXT_VALUE_NAME);
 
     App::new(APP_NAME)
         .about(ABOUT)
@@ -77,6 +93,7 @@ fn build_clap_spec<'a, 'b>() -> clap::App<'a, 'b> {
         .version(VERSION)
         .arg(cache_file_arg)
         .arg(cache_only_arg)
+        .arg(format_arg)
         .arg(no_progress_arg)
         .arg(quiet_arg)
         .arg(files_arg)
@@ -109,11 +126,21 @@ fn show_progress_value<'a>(matches: &clap::ArgMatches<'a>) -> bool {
     !matches.is_present(NO_PROGRESS_ARG_NAME) && !quiet_value(matches)
 }
 
-fn show_output<'a>(matches: &clap::ArgMatches<'a>) -> DynamicOutput {
+fn choose_output<'a>(matches: &clap::ArgMatches<'a>) -> DynamicOutput {
     if quiet_value(matches) {
         new_no_output()
     } else {
-        new_text_output()
+        // spec defines a default value, so it will always be there.
+        match matches.value_of(FORMAT_ARG_NAME).unwrap() {
+            FORMAT_NONE_VALUE_NAME => new_no_output(),
+            FORMAT_OPEN_VALUE_NAME => new_open_output(),
+            FORMAT_TEXT_VALUE_NAME => new_text_output(),
+            FORMAT_YAML_VALUE_NAME => new_yaml_output(),
+            _ => {
+                // This should never happen.
+                panic!("Weird unknown format value")
+            }
+        }
     }
 }
 
