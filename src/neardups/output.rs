@@ -1,3 +1,5 @@
+use subprocess::{Popen, PopenConfig};
+
 use super::search::Matches;
 
 pub fn new_no_output() -> DynamicOutput {
@@ -77,8 +79,14 @@ impl Output for NoOutput {
 pub struct OpenOutput();
 
 impl Output for OpenOutput {
-    fn output(&self, _matches: Vec<Matches>) {
-        panic!("WOTCHA!");
+    fn output(&self, matches: Vec<Matches>) {
+        for mtch in matches {
+            // TODO: see if you can shorten this ridiculous line.
+            let mut filenames = mtch.matched_files.into_iter().map(|f| f.to_string_lossy().into_owned().to_string()).collect();
+            let mut args = vec!["open".to_string()];
+            args.append(&mut filenames);
+            let _ = Popen::create(&args, PopenConfig::default());
+        }
     }
 }
 
