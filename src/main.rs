@@ -10,15 +10,14 @@ use itools::neardups::{
 fn run() -> Result<()> {
     let config = Config::new()?;
 
-    // If we fail to load the cached file, create a new cache.
-    // TODO: we may want to make this an option to avoid overwriting data.
+    // If we fail to load the cached file, report an error to avoid overwriting data.
+    // If the file doesn't exist, then go ahead and create a brand new one.
     let mut cache = if !config.cache_file.exists() {
         PersistedCache::new()
     } else {
-        // TODO: report this error better.
         match PersistedCache::load(&config.cache_file) {
             Ok(c) => c,
-            Err(_) => PersistedCache::new(),
+            Err(e) => return Err(e),
         }
     };
 
