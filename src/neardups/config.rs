@@ -7,6 +7,7 @@ use clap::{self, App, Arg};
 use super::output::{
     new_no_output, new_open_output, new_text_output, new_yaml_output, DynamicOutput,
 };
+use super::search::DynamicSearch;
 use super::Result;
 
 #[derive(Default, Debug)]
@@ -16,6 +17,7 @@ pub struct Config {
     pub files: Vec<OsString>,
     pub output: DynamicOutput,
     pub show_progress: bool,
+    pub search: DynamicSearch,
 }
 
 impl Config {
@@ -36,6 +38,7 @@ impl Config {
             files: files_values(&matches),
             output: choose_output(&matches),
             show_progress: show_progress_value(&matches),
+            search: choose_search(&matches),
         })
     }
 }
@@ -56,6 +59,12 @@ const FORMAT_NONE_VALUE_NAME: &str = "none";
 const FORMAT_OPEN_VALUE_NAME: &str = "open";
 const FORMAT_TEXT_VALUE_NAME: &str = "text";
 const FORMAT_YAML_VALUE_NAME: &str = "yaml";
+const HASH_DISTANCE_ARG_NAME: &str = "distance";
+const HASH_TYPE_ARG_NAME: &str = "use_hash";
+const HASH_TYPE_DCT_VALUE_NAME: &str = "dct";
+const HASH_TYPE_GRAD_VALUE_NAME: &str = "grad";
+const HASH_TYPE_MEAN_VALUE_NAME: &str = "mean";
+const HASH_TYPE_SHA2_VALUE_NAME: &str = "sha2";
 const NO_PROGRESS_ARG_NAME: &str = "no_progress";
 const QUIET_ARG_NAME: &str = "quiet";
 
@@ -86,6 +95,21 @@ fn build_clap_spec<'a, 'b>() -> clap::App<'a, 'b> {
             FORMAT_TEXT_VALUE_NAME,
             FORMAT_YAML_VALUE_NAME,
         ]).default_value(FORMAT_TEXT_VALUE_NAME);
+    let distance_arg = Arg::with_name(HASH_DISTANCE_ARG_NAME)
+        .long(HASH_DISTANCE_ARG_NAME)
+        .short("d")
+        .takes_value(true)
+        .default_value("0");
+    let hash_type_arg = Arg::with_name(HASH_TYPE_ARG_NAME)
+        .long(HASH_TYPE_ARG_NAME)
+        .short("t")
+        .takes_value(true)
+        .possible_values(&[
+            HASH_TYPE_DCT_VALUE_NAME,
+            HASH_TYPE_MEAN_VALUE_NAME,
+            HASH_TYPE_GRAD_VALUE_NAME,
+            HASH_TYPE_SHA2_VALUE_NAME,
+        ]).default_value(HASH_TYPE_DCT_VALUE_NAME);
 
     App::new(APP_NAME)
         .about(ABOUT)
@@ -96,6 +120,8 @@ fn build_clap_spec<'a, 'b>() -> clap::App<'a, 'b> {
         .arg(format_arg)
         .arg(no_progress_arg)
         .arg(quiet_arg)
+        .arg(distance_arg)
+        .arg(hash_type_arg)
         .arg(files_arg)
 }
 
@@ -142,6 +168,10 @@ fn choose_output<'a>(matches: &clap::ArgMatches<'a>) -> DynamicOutput {
             }
         }
     }
+}
+
+fn choose_search<'a>(_matches: &clap::ArgMatches<'a>) -> DynamicSearch {
+    DynamicSearch::default()
 }
 
 #[cfg(test)]

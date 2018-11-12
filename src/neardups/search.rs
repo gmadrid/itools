@@ -3,6 +3,20 @@ use std::path::PathBuf;
 
 use super::fileinfo::FileInfo;
 
+#[derive(Debug)]
+pub enum DynamicSearch{
+    SHA2,
+    MEAN,
+    GRAD,
+    DCT,
+}
+
+impl Default for DynamicSearch {
+    fn default() -> DynamicSearch {
+        DynamicSearch::DCT
+    }
+}
+
 #[derive(Debug, Default, Deserialize, Serialize)]
 pub struct Matches {
     pub filename: PathBuf,

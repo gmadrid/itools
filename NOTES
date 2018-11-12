@@ -45,3 +45,7 @@ Goal: To find dups and near dups in a large corpus of image files.
 // 3) When creating the PersistedCache, specify a filename for loading.
 // 4) Also, specify the name of the output file on creation.
 // 5) If inputname == outputname, nothing bad should happen.
+
+// Search
+--distance,  -d  Bit difference (only 0 is valid for sha2)
+--hash_type, -t  sha2|mean|grad|dct
