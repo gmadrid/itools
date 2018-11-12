@@ -76,3 +76,8 @@ impl Metric<ImageHash> for HammingDistance {
         a.dist(b) as u64
     }
 }
+
+trait SearchHelper {
+    fn get_hash<'a>(fi: &'a FileInfo) -> &'a str;
+}
+
