@@ -44,7 +44,7 @@ fn run() -> Result<()> {
 
     if !config.cache_only {
         let matches = find_dups(files, fileinfo);
-        output::new_text_output().output(matches);
+        config.output.output(matches);
     }
 
     Ok(())

@@ -4,14 +4,15 @@ use std::path::PathBuf;
 
 use clap::{self, App, Arg};
 
+use super::output::{new_no_output, new_text_output, DynamicOutput};
 use super::Result;
 
 #[derive(Default, Debug)]
 pub struct Config {
     pub cache_file: PathBuf,
     pub cache_only: bool,
-    pub show_output: bool,
     pub files: Vec<OsString>,
+    pub output: DynamicOutput,
     pub show_progress: bool,
 }
 
@@ -30,8 +31,8 @@ impl Config {
         Ok(Config {
             cache_file: cache_file(&matches),
             cache_only: cache_only(&matches),
-            show_output: show_output(&matches),
             files: files_values(&matches),
+            output: show_output(&matches),
             show_progress: show_progress_value(&matches),
         })
     }
@@ -108,8 +109,12 @@ fn show_progress_value<'a>(matches: &clap::ArgMatches<'a>) -> bool {
     !matches.is_present(NO_PROGRESS_ARG_NAME) && !quiet_value(matches)
 }
 
-fn show_output<'a>(matches: &clap::ArgMatches<'a>) -> bool {
-    !quiet_value(matches)
+fn show_output<'a>(matches: &clap::ArgMatches<'a>) -> DynamicOutput {
+    if quiet_value(matches) {
+        new_no_output()
+    } else {
+        new_text_output()
+    }
 }
 
 #[cfg(test)]
