@@ -1,3 +1,4 @@
+extern crate bk_tree;
 extern crate clap;
 extern crate console;
 extern crate image;

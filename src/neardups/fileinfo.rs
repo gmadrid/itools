@@ -3,20 +3,29 @@ use std::path::PathBuf;
 #[derive(Default, Debug, Serialize, Deserialize)]
 pub struct FileInfo {
     pub filename: PathBuf,
+    pub a_hash: String,
+    pub d_hash: String,
+    pub p_hash: String,
+    pub sha2_hash: String,
+}
+
+#[derive(Default, Debug)]
+pub struct FileInfoIncomplete {
+    pub filename: PathBuf,
     pub a_hash: Option<String>,
     pub d_hash: Option<String>,
     pub p_hash: Option<String>,
     pub sha2_hash: Option<String>,
 }
 
-impl FileInfo {
-    pub fn with_name<T>(name: T) -> FileInfo
+impl FileInfoIncomplete {
+    pub fn with_name<T>(name: T) -> FileInfoIncomplete
     where
         T: Into<PathBuf>,
     {
-        FileInfo {
+        FileInfoIncomplete {
             filename: name.into(),
-            ..FileInfo::default()
+            ..FileInfoIncomplete::default()
         }
     }
 

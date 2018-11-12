@@ -8,7 +8,7 @@ use img_hash::{HashType, ImageHash};
 use serialize::base64::{ToBase64, STANDARD};
 use sha2::{Digest, Sha256};
 
-use super::fileinfo::FileInfo;
+use super::fileinfo::{FileInfo, FileInfoIncomplete};
 use super::utils::{spawn_with_name, SafeSend};
 
 #[derive(Debug)]
@@ -59,7 +59,7 @@ impl Hasher {
     }
 }
 
-type FileInfoHandle = Arc<RwLock<FileInfo>>;
+type FileInfoHandle = Arc<RwLock<FileInfoIncomplete>>;
 type VecHandle<T> = Arc<Vec<T>>;
 type ImageHandle = Arc<image::DynamicImage>;
 
@@ -78,7 +78,7 @@ fn make_file_reader(
         .spawn(move || {
             for file in files {
                 let buf = fs::read(&file).unwrap();
-                let fi = FileInfo::with_name(file);
+                let fi = FileInfoIncomplete::with_name(file);
                 let fi_handle = Arc::new(RwLock::new(fi));
                 let buf_handle = Arc::new(buf);
                 tx0.safe_send((Arc::clone(&fi_handle), Arc::clone(&buf_handle)));
@@ -217,7 +217,19 @@ fn make_aggregator(fi_rx: Receiver<FileInfoHandle>) -> (Receiver<FileInfo>, Join
                 // calling send(), this means that more messages will be arriving for
                 // this FileInfo, so we can safely do nothing and move on.
                 let _ = Arc::try_unwrap(fi).map(|rw_lock| {
-                    tx.safe_send(rw_lock.into_inner().unwrap());
+                    let fic = rw_lock.into_inner().unwrap();
+                    let fi = FileInfo {
+                        filename: fic.filename,
+
+                        // All of these unwraps should be okay because we checked
+                        // fic.complete().
+                        a_hash: fic.a_hash.unwrap(),
+                        d_hash: fic.d_hash.unwrap(),
+                        p_hash: fic.p_hash.unwrap(),
+                        sha2_hash: fic.sha2_hash.unwrap(),
+                    };
+                       
+                    tx.safe_send(fi);
                 });
             }
         }
