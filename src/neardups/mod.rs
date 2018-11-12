@@ -1,7 +1,7 @@
 mod config;
 mod fileinfo;
 mod hasher;
-mod output;
+pub mod output;
 mod pcache;
 mod progress;
 mod result;
@@ -13,7 +13,7 @@ pub use self::config::Config;
 
 // pub use fileinfo::FileInfo;
 pub use self::hasher::Hasher;
-pub use self::output::output_matches;
+pub use self::output::Output;
 pub use self::pcache::PersistedCache;
 pub use self::progress::new_counter;
 pub use self::result::{ItoolsError, Result};

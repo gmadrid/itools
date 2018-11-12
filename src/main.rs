@@ -2,9 +2,10 @@ extern crate itools;
 
 use std::error::Error;
 
+use itools::neardups::output::Output;
 use itools::neardups::{
-    bool_to_option, expand_file_list, find_dups, new_counter, output_matches, Config, Hasher,
-    ItoolsError, PersistedCache, Result,
+    bool_to_option, expand_file_list, find_dups, new_counter, output, Config, Hasher, ItoolsError,
+    PersistedCache, Result,
 };
 
 fn run() -> Result<()> {
@@ -43,8 +44,7 @@ fn run() -> Result<()> {
 
     if !config.cache_only {
         let matches = find_dups(files, fileinfo);
-
-        output_matches(matches);
+        output::new_text_output().output(matches);
     }
 
     Ok(())
