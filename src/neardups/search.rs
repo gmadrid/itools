@@ -54,23 +54,57 @@ impl SearchType {
     ) -> Vec<Matches> {
         let index = self.build_reverse_index(&mut fileinfos.values());
 
-        if self.distance() == 0 {
+        let distance = self.distance();
+        if distance == 0 {
             self.find_exact_distance(files, index, fileinfos)
         } else {
-            let bk_tree = self.build_bk_tree(&index);
-            for file in &files {
-                if let Some(fi_to_find) = fileinfos.get(file) {
-                    let hash_to_find = self.get_hash(fi_to_find);
-                    let key_to_find = ImageHash::from_base64(hash_to_find).unwrap();
-                    let close = bk_tree.find(&key_to_find, self.distance());
-                    println!("FOO:");
-                    for key in close {
-                        println!("   {:?}", key);
-                    }
+            self.find_close_matches(distance, &files, &index, &fileinfos)
+        }
+    }
+
+    fn collect_matches<'a, I>(
+        &self,
+        filename: &PathBuf,
+        close_hashes: I,
+        index: &HashMap<String, Vec<PathBuf>>,
+    ) -> Matches
+    where
+        I: Iterator<Item = (u64, &'a ImageHash)>,
+    {
+        let mut fns = Vec::new();
+        for (_distance, hash) in close_hashes {
+            let hash_str = hash.to_base64();
+            let paths = &index[&hash_str];
+            fns.extend(paths);
+        }
+
+        Matches {
+            filename: filename.clone(),
+            matched_files: fns.into_iter().map(|f| f.to_owned()).collect(),
+        }
+    }
+
+    fn find_close_matches(
+        &self,
+        distance: u64,
+        files: &Vec<PathBuf>,
+        index: &HashMap<String, Vec<PathBuf>>,
+        fileinfos: &HashMap<PathBuf, FileInfo>,
+    ) -> Vec<Matches> {
+        let bk_tree = self.build_bk_tree(&index);
+        let mut vec = Vec::new();
+        for file in files {
+            if let Some(fi_to_find) = fileinfos.get(file) {
+                let hash_to_find = self.get_hash(fi_to_find);
+                let key_to_find = ImageHash::from_base64(hash_to_find).unwrap();
+                let close = bk_tree.find(&key_to_find, distance);
+                let matches = self.collect_matches(&file, close, index);
+                if matches.matched_files.len() > 1 {
+                    vec.push(matches);
                 }
             }
-            Vec::new()
         }
+        vec
     }
 
     fn build_bk_tree(
