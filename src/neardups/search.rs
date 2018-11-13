@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use bk_tree::Metric;
+use bk_tree::{BKTree, Metric};
 use img_hash::ImageHash;
 
 use super::fileinfo::FileInfo;
@@ -57,8 +57,32 @@ impl SearchType {
         if self.distance() == 0 {
             self.find_exact_distance(files, index, fileinfos)
         } else {
-            panic!("WHAT!")
+            let bk_tree = self.build_bk_tree(&index);
+            for file in &files {
+                if let Some(fi_to_find) = fileinfos.get(file) {
+                    let hash_to_find = self.get_hash(fi_to_find);
+                    let key_to_find = ImageHash::from_base64(hash_to_find).unwrap();
+                    let close = bk_tree.find(&key_to_find, self.distance());
+                    println!("FOO:");
+                    for key in close {
+                        println!("   {:?}", key);
+                    }
+                }
+            }
+            Vec::new()
         }
+    }
+
+    fn build_bk_tree(
+        &self,
+        hashes: &HashMap<String, Vec<PathBuf>>,
+    ) -> BKTree<ImageHash, HammingDistance> {
+        let mut bk_tree = BKTree::new(HammingDistance {});
+        for key in hashes.keys() {
+            let hash = ImageHash::from_base64(key).unwrap();
+            bk_tree.add(hash);
+        }
+        bk_tree
     }
 
     fn find_exact_distance(
