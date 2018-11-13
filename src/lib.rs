@@ -10,8 +10,8 @@ extern crate rustc_serialize as serialize;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_yaml;
-extern crate subprocess;
 extern crate sha2;
+extern crate subprocess;
 extern crate walkdir;
 
 pub mod neardups;

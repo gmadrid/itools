@@ -7,7 +7,7 @@ use clap::{self, App, Arg};
 use super::output::{
     new_no_output, new_open_output, new_text_output, new_yaml_output, DynamicOutput,
 };
-use super::search::DynamicSearch;
+use super::search::SearchType;
 use super::Result;
 
 #[derive(Default, Debug)]
@@ -17,7 +17,7 @@ pub struct Config {
     pub files: Vec<OsString>,
     pub output: DynamicOutput,
     pub show_progress: bool,
-    pub search: DynamicSearch,
+    pub search: SearchType,
 }
 
 impl Config {
@@ -170,8 +170,30 @@ fn choose_output<'a>(matches: &clap::ArgMatches<'a>) -> DynamicOutput {
     }
 }
 
-fn choose_search<'a>(_matches: &clap::ArgMatches<'a>) -> DynamicSearch {
-    DynamicSearch::default()
+fn choose_search<'a>(matches: &clap::ArgMatches<'a>) -> SearchType {
+    // Both of these unwraps should be safe since clap has a default value.
+    let distance = matches
+        .value_of(HASH_DISTANCE_ARG_NAME)
+        .unwrap()
+        .parse::<u8>()
+        .unwrap();
+    let type_value = matches.value_of(HASH_TYPE_ARG_NAME).unwrap();
+
+    match type_value {
+        HASH_TYPE_MEAN_VALUE_NAME => SearchType::MEAN(distance),
+        HASH_TYPE_GRAD_VALUE_NAME => SearchType::GRAD(distance),
+        HASH_TYPE_DCT_VALUE_NAME => SearchType::DCT(distance),
+        HASH_TYPE_SHA2_VALUE_NAME => {
+            if distance != 0 {
+                panic!("SHA2 can only have distance == 0.");
+            }
+            SearchType::SHA2
+        }
+        _ => {
+            // This should never happen.
+            panic!("Weird unknown format value");
+        }
+    }
 }
 
 #[cfg(test)]

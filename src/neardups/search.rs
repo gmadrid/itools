@@ -6,17 +6,103 @@ use img_hash::ImageHash;
 
 use super::fileinfo::FileInfo;
 
-#[derive(Debug)]
-pub enum DynamicSearch{
+#[derive(Clone, Copy, Debug)]
+pub enum SearchType {
     SHA2,
-    MEAN,
-    GRAD,
-    DCT,
+    MEAN(u8),
+    GRAD(u8),
+    DCT(u8),
 }
 
-impl Default for DynamicSearch {
-    fn default() -> DynamicSearch {
-        DynamicSearch::DCT
+impl Default for SearchType {
+    fn default() -> SearchType {
+        SearchType::SHA2
+    }
+}
+
+// Steps
+// 1. Build reverse index from hash to ImageList.
+// 2. If distance == 0, find the index and spew.
+// 3. Otherwise, build the bk-tree, and use it to search.
+// 4. Spew results, preferably in distance order.
+
+impl SearchType {
+    fn distance(&self) -> u64 {
+        use self::SearchType::*;
+        match *self {
+            MEAN(d) => d as u64,
+            GRAD(d) => d as u64,
+            DCT(d) => d as u64,
+            SHA2 => 0u64,
+        }
+    }
+
+    fn get_hash<'a>(&self, fi: &'a FileInfo) -> &'a str {
+        use self::SearchType::*;
+        match *self {
+            SHA2 => &fi.sha2_hash,
+            MEAN(_) => &fi.a_hash,
+            GRAD(_) => &fi.d_hash,
+            DCT(_) => &fi.p_hash,
+        }
+    }
+
+    pub fn find_dups(
+        &self,
+        files: Vec<PathBuf>,
+        fileinfos: HashMap<PathBuf, FileInfo>,
+    ) -> Vec<Matches> {
+        let index = self.build_reverse_index(&mut fileinfos.values());
+
+        if self.distance() == 0 {
+            self.find_exact_distance(files, index, fileinfos)
+        } else {
+            panic!("WHAT!")
+        }
+    }
+
+    fn find_exact_distance(
+        &self,
+        files: Vec<PathBuf>,
+        index: HashMap<String, Vec<PathBuf>>,
+        fileinfos: HashMap<PathBuf, FileInfo>,
+    ) -> Vec<Matches> {
+        files.iter().fold(Vec::default(), |mut matches, filename| {
+            if let Some(fi) = fileinfos.get(filename) {
+                let hash = self.get_hash(fi);
+
+                if let Some(matched_files) = index.get(hash) {
+                    // TODO: Remove the filename from the matched files.
+                    if matched_files.len() > 1 {
+                        matches.push(Matches {
+                            filename: filename.to_owned(),
+                            matched_files: matched_files.to_owned(),
+                        });
+                    }
+                }
+            }
+            matches
+        })
+    }
+
+    fn build_reverse_index<'a, T>(
+        &self,
+        fileinfos: &'a mut T, // Vec<FileInfo>
+    ) -> HashMap<String, Vec<PathBuf>>
+    where
+        T: Iterator<Item = &'a FileInfo>,
+    {
+        fileinfos.by_ref().fold(
+            HashMap::<String, Vec<PathBuf>>::default(),
+            |mut index, fi| {
+                let key = self.get_hash(fi);
+                index
+                    .entry(key.to_string())
+                    .or_insert_with(|| Vec::default())
+                    .push(fi.filename.clone());
+                index
+            },
+        )
     }
 }
 
@@ -26,49 +112,6 @@ pub struct Matches {
     pub matched_files: Vec<PathBuf>,
 }
 
-// Steps
-// 1. Build reverse index from hash to ImageList.
-// 2. If distance == 0, find the index and spew.
-// 3. Otherwise, build the bk-tree, and use it to search.
-// 4. Spew results, preferably in distance order.
-
-pub fn find_dups(files: Vec<PathBuf>, fileinfos: HashMap<PathBuf, FileInfo>) -> Vec<Matches> {
-    // TODO: can I get rid of the clones?
-
-    let index = (&fileinfos).values().fold(
-        HashMap::<String, Vec<PathBuf>>::default(),
-        |mut state, fi| {
-            let key = &fi.sha2_hash;
-            state
-                .entry(key.to_string())
-                .or_insert_with(|| Vec::default())
-                .push(fi.filename.clone());
-            state
-        },
-    );
-
-    let matches = (&files)
-        .into_iter()
-        .fold(Vec::<Matches>::default(), |mut state, filename| {
-            // Look up sha2 for each file.
-            if let Some(fi) = fileinfos.get(filename) {
-                let sha2 = &fi.sha2_hash;
-
-                if let Some(matched_files) = index.get(sha2) {
-                    // TODO: remove the filename from the matched files.
-                    if matched_files.len() > 1 {
-                        state.push(Matches {
-                            filename: filename.to_owned(),
-                            matched_files: matched_files.to_owned(),
-                        });
-                    }
-                }
-            }
-            state
-        });
-    matches
-}
-
 struct HammingDistance;
 
 impl Metric<ImageHash> for HammingDistance {
@@ -76,8 +119,3 @@ impl Metric<ImageHash> for HammingDistance {
         a.dist(b) as u64
     }
 }
-
-trait SearchHelper {
-    fn get_hash<'a>(fi: &'a FileInfo) -> &'a str;
-}
-

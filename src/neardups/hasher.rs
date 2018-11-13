@@ -228,7 +228,7 @@ fn make_aggregator(fi_rx: Receiver<FileInfoHandle>) -> (Receiver<FileInfo>, Join
                         p_hash: fic.p_hash.unwrap(),
                         sha2_hash: fic.sha2_hash.unwrap(),
                     };
-                       
+
                     tx.safe_send(fi);
                 });
             }
