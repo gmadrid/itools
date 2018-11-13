@@ -1,10 +1,11 @@
 extern crate itools;
 
 use std::error::Error;
+use std::fs::File;
 
 use itools::neardups::{
     bool_to_option, expand_file_list, new_counter, output::Output, Config, Hasher, ItoolsError,
-    PersistedCache, Result,
+    PersistedCache, Result, SpinnerReader,
 };
 
 fn run() -> Result<()> {
@@ -15,10 +16,13 @@ fn run() -> Result<()> {
     let mut cache = if !config.cache_file.exists() {
         PersistedCache::new()
     } else {
-        match PersistedCache::load(&config.cache_file) {
+        let file = File::open(&config.cache_file)?;
+        let r = SpinnerReader::new(file, "Loading cache file...");
+        let val = match PersistedCache::from_reader(r) {
             Ok(c) => c,
             Err(e) => return Err(e),
-        }
+        };
+        val
     };
 
     // TODO: report the missing files.

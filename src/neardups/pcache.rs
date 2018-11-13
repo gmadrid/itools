@@ -34,14 +34,21 @@ impl PersistedCache {
         PersistedCache::default()
     }
 
-    // Load a PersistedCache from the specified filename.
-    pub fn load(filename: &Path) -> Result<PersistedCache> {
-        let file = File::open(filename)?;
-        let hash = Self::read_hash(file)?;
+    pub fn from_reader<T>(reader: T) -> Result<PersistedCache>
+    where
+        T: Read,
+    {
+        let hash = Self::read_hash(reader)?;
         Ok(PersistedCache {
             cache: Arc::new(RwLock::new(hash)),
             ..PersistedCache::default()
         })
+    }
+
+    // Load a PersistedCache from the specified filename.
+    pub fn load(filename: &Path) -> Result<PersistedCache> {
+        let file = File::open(filename)?;
+        PersistedCache::from_reader(&file)
     }
 
     pub fn run<T>(&mut self, filename: T, rx: Receiver<FileInfo>, pb: Option<ProgressBar>)
