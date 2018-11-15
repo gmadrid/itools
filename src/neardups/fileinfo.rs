@@ -18,6 +18,20 @@ pub struct FileInfoIncomplete {
     pub sha2_hash: Option<String>,
 }
 
+impl From<FileInfoIncomplete> for FileInfo {
+    fn from(fic: FileInfoIncomplete) -> FileInfo {
+        // Trying to make a FileInfo from an incomplete FileInfoIncomplete is a
+        // programmer error. All of these unwraps should work (or panic!).
+        FileInfo {
+            filename: fic.filename,
+            a_hash: fic.a_hash.unwrap(),
+            d_hash: fic.d_hash.unwrap(),
+            p_hash: fic.p_hash.unwrap(),
+            sha2_hash: fic.sha2_hash.unwrap(),
+        }
+    }
+}
+
 impl FileInfoIncomplete {
     pub fn with_name<T>(name: T) -> FileInfoIncomplete
     where

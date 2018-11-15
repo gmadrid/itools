@@ -218,18 +218,7 @@ fn make_aggregator(fi_rx: Receiver<FileInfoHandle>) -> (Receiver<FileInfo>, Join
                 // this FileInfo, so we can safely do nothing and move on.
                 let _ = Arc::try_unwrap(fi).map(|rw_lock| {
                     let fic = rw_lock.into_inner().unwrap();
-                    let fi = FileInfo {
-                        filename: fic.filename,
-
-                        // All of these unwraps should be okay because we checked
-                        // fic.complete().
-                        a_hash: fic.a_hash.unwrap(),
-                        d_hash: fic.d_hash.unwrap(),
-                        p_hash: fic.p_hash.unwrap(),
-                        sha2_hash: fic.sha2_hash.unwrap(),
-                    };
-
-                    tx.safe_send(fi);
+                    tx.safe_send(fic.into());
                 });
             }
         }
