@@ -25,13 +25,8 @@ where
 fn filter_files_in_cache(files: &Vec<PathBuf>, cache: &PersistedCache) -> Vec<PathBuf> {
     files
         .iter()
-        .flat_map(|f| {
-            if cache.contains_file(f) {
-                None
-            } else {
-                Some(f.clone())
-            }
-        }).collect::<Vec<PathBuf>>()
+        .flat_map(|f| bool_to_option(!cache.contains_file(f), || f.clone()))
+        .collect::<Vec<PathBuf>>()
 }
 
 fn run() -> Result<()> {
