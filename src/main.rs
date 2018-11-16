@@ -13,6 +13,8 @@ fn load_or_create_cache_file<T>(cache_file: T) -> Result<PersistedCache>
 where
     T: AsRef<Path>,
 {
+    // If we fail to load the cached file, report an error to avoid overwriting data.
+    // If the file doesn't exist, then go ahead and create a brand new one.
     if !cache_file.as_ref().exists() {
         Ok(PersistedCache::new())
     } else {
@@ -32,8 +34,6 @@ fn filter_files_in_cache(files: &Vec<PathBuf>, cache: &PersistedCache) -> Vec<Pa
 fn run() -> Result<()> {
     let config = Config::new()?;
 
-    // If we fail to load the cached file, report an error to avoid overwriting data.
-    // If the file doesn't exist, then go ahead and create a brand new one.
     let mut cache = load_or_create_cache_file(&config.cache_file)?;
 
     // TODO: report the missing files.
